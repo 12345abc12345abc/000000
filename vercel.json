@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "rm -rf dist && mkdir -p dist && cp \"0/IEG NEWS.dc.html\" dist/index.html && cp 0/support.js dist/ && cp -r 0/uploads dist/",
+  "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/uploads/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }]
+    }
+  ]
+}

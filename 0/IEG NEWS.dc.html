@@ -20,6 +20,11 @@
   a:hover { color: #FF0000; }
   ::selection { background: #FFB300; color: #333333; }
   @keyframes iegIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  /* 좁은 화면에서는 소식지 → 언론 보도 순으로 쌓이고, 넓어지면 좌우 2단이 된다. */
+  .ieg-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(32px, 4vw, 56px); }
+  @media (min-width: 900px) {
+    .ieg-split { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: start; }
+  }
 </style>
 </helmet>
 <div style="min-height:100vh;background:#FAF7F0;padding:0 clamp(20px,5vw,64px) 0">
@@ -36,53 +41,40 @@
       </div>
       <div style="border-top:3px solid #333333"></div>
       <div style="border-top:1px solid #333333;margin-top:4px"></div>
-      <nav style="display:flex;gap:clamp(20px,3vw,36px);border-bottom:1px solid rgba(51,51,51,0.2)">
-        <button onClick="{{ showNewsletter }}" style="position:relative;appearance:none;border:none;background:transparent;padding:16px 2px;font-size:16px;font-weight:800;letter-spacing:-0.01em;color:#333333;cursor:pointer;transition:color .15s" style-hover="color:#FF0000">
-          소식지
-          <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
-            <span style="position:absolute;left:0;right:0;bottom:-1px;height:3px;background:#FF0000"></span>
-          </sc-if>
-        </button>
-        <button onClick="{{ showPress }}" style="position:relative;appearance:none;border:none;background:transparent;padding:16px 2px;font-size:16px;font-weight:800;letter-spacing:-0.01em;color:#333333;cursor:pointer;transition:color .15s" style-hover="color:#FF0000">
-          언론 보도
-          <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
-            <span style="position:absolute;left:0;right:0;bottom:-1px;height:3px;background:#FF0000"></span>
-          </sc-if>
-        </button>
-      </nav>
     </header>
 
-    <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
-    <section style="padding:clamp(40px,5vw,64px) 0 clamp(32px,4vw,52px)">
-      <span style="display:inline-block;margin:0 0 clamp(14px,2vw,20px);padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(20px,3vw,36px)">
-        <figure style="margin:0;display:flex;flex-direction:column;gap:12px">
-          <div onClick="{{ openPage1 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
-            <img src="uploads/1.png" alt="IEG 소식지 1면" style="display:block;width:100%;height:auto">
-          </div>
-          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분</figcaption>
-          </sc-if>
-        </figure>
-        <figure style="margin:0;display:flex;flex-direction:column;gap:12px">
-          <div onClick="{{ openPage2 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
-            <img src="uploads/2.png" alt="IEG 소식지 2면" style="display:block;width:100%;height:auto">
-          </div>
-          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회</figcaption>
-          </sc-if>
-        </figure>
-      </div>
-    </section>
-    </sc-if>
+    <div class="ieg-split" style="padding:clamp(32px,4vw,52px) 0 0">
 
-    <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
-    <section style="padding:clamp(24px,3vw,36px) 0 0">
+      <section>
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding-bottom:clamp(14px,2vw,20px);border-bottom:2px solid #333333;margin-bottom:clamp(16px,2.2vw,24px)">
+          <h2 style="margin:0;font-size:22px;font-weight:900;letter-spacing:-0.02em">소식지</h2>
+          <span style="display:inline-block;padding:4px 9px;background:#FF0000;color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(18px,2.4vw,28px)">
+          <figure style="margin:0;display:flex;flex-direction:column;gap:10px">
+            <div onClick="{{ openPage1 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
+              <img src="uploads/1.png" alt="IEG 소식지 1면" style="display:block;width:100%;height:auto">
+            </div>
+            <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+              <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분</figcaption>
+            </sc-if>
+          </figure>
+          <figure style="margin:0;display:flex;flex-direction:column;gap:10px">
+            <div onClick="{{ openPage2 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
+              <img src="uploads/2.png" alt="IEG 소식지 2면" style="display:block;width:100%;height:auto">
+            </div>
+            <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+              <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회</figcaption>
+            </sc-if>
+          </figure>
+        </div>
+      </section>
 
-      <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:clamp(8px,1.4vw,14px)">
-        <span style="font-size:13px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.55)">전체 {{ total }}건</span>
-        <span style="font-size:13px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.55)">{{ rangeLabel }}</span>
-      </div>
+      <section>
+        <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:clamp(14px,2vw,20px);border-bottom:2px solid #333333">
+          <h2 style="margin:0;font-size:22px;font-weight:900;letter-spacing:-0.02em">언론 보도</h2>
+          <span style="font-size:13px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.55)">{{ rangeLabel }}</span>
+        </div>
 
       <sc-for list="{{ items }}" as="item" hint-placeholder-count="12">
         <div style="display:flex;align-items:flex-start;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.2vw,22px) 0;border-top:1px solid rgba(51,51,51,0.2);transition:border-color .15s" style-hover="border-top-color:#FF0000">
@@ -105,25 +97,15 @@
       </sc-for>
 
       <div style="border-top:1px solid #333333;margin-top:2px"></div>
-      <nav style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:clamp(22px,3vw,32px) 0 0">
-        <sc-if value="{{ hasPrev }}" hint-placeholder-val="{{ false }}">
-          <button onClick="{{ goPrev }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">‹</button>
-        </sc-if>
-        <sc-for list="{{ pages }}" as="p" hint-placeholder-count="5">
-          <sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
-            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;background:#333333;color:#FFFFFF;font-size:15px;font-weight:800">{{ p.label }}</span>
-          </sc-if>
-          <sc-if value="{{ !p.active }}" hint-placeholder-val="{{ true }}">
-            <button onClick="{{ p.select }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:700;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">{{ p.label }}</button>
-          </sc-if>
-        </sc-for>
-        <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
-          <button onClick="{{ goNext }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">›</button>
-        </sc-if>
-      </nav>
+      <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ loadMore }}" style="display:block;width:100%;appearance:none;border:1px solid #333333;background:transparent;margin-top:clamp(18px,2.4vw,26px);padding:14px 16px;font-size:14px;font-weight:800;letter-spacing:0.02em;color:#333333;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">더보기 <span style="font-weight:700">({{ remaining }}건 남음)</span></button>
+      </sc-if>
+      <sc-if value="{{ !hasMore }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:clamp(18px,2.4vw,26px) 0 0;text-align:center;font-size:12px;font-weight:700;letter-spacing:0.1em;color:rgba(51,51,51,0.4)">전체 {{ total }}건을 모두 보았습니다</p>
+      </sc-if>
 
-    </section>
-    </sc-if>
+      </section>
+    </div>
 
     <footer style="margin-top:clamp(56px,7vw,96px);padding-bottom:clamp(40px,5vw,64px)">
       <div style="border-top:3px solid #333333"></div>
@@ -241,7 +223,8 @@ const ARTICLES = [
 
 const PAGES = ['uploads/1.png', 'uploads/2.png'];
 
-const PER_PAGE = 12;
+const INITIAL_SHOWN = 8;   // 처음 보여줄 기사 수
+const STEP = 8;            // '더보기' 한 번에 추가되는 수
 
 const rankOf = (media) => { const i = RANK.indexOf(media); return i === -1 ? RANK.length : i; };
 
@@ -250,11 +233,10 @@ const rankOf = (media) => { const i = RANK.indexOf(media); return i === -1 ? RAN
 const SORTED = [...ARTICLES].sort((a, b) =>
   a.month === b.month ? rankOf(a.m) - rankOf(b.m) : (a.month < b.month ? 1 : -1)
 );
-const PAGE_COUNT = Math.max(1, Math.ceil(SORTED.length / PER_PAGE));
 
 class Component extends DCLogic {
   state = {
-    tab: 'newsletter', page: 1, modalIndex: null, progress: 0, showTop: false
+    shown: INITIAL_SHOWN, modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
@@ -287,38 +269,20 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
 
-    const page = Math.min(Math.max(1, s.page), PAGE_COUNT);
-    const start = (page - 1) * PER_PAGE;
-    const slice = SORTED.slice(start, start + PER_PAGE);
-
-    // 페이지를 바꾸면 목록 위쪽이 보이도록 맨 위로 올린다.
-    const goTo = (n) => {
-      this.setState({ page: n });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => ({
-      label: String(i + 1),
-      active: i + 1 === page,
-      select: () => goTo(i + 1)
-    }));
+    const shown = Math.min(Math.max(1, s.shown), SORTED.length);
 
     return {
       total: SORTED.length,
-      rangeLabel: (start + 1) + '–' + (start + slice.length) + ' / ' + SORTED.length,
-      items: slice.map(a => ({
+      rangeLabel: shown + ' / ' + SORTED.length,
+      items: SORTED.slice(0, shown).map(a => ({
         month: a.month, media: a.m, title: a.t, url: a.u,
         note: a.note || '', img: a.img || ''
       })),
-      pages,
-      hasPrev: page > 1,
-      hasNext: page < PAGE_COUNT,
-      goPrev: () => goTo(page - 1),
-      goNext: () => goTo(page + 1),
-      isNewsletter: s.tab === 'newsletter',
-      isPress: s.tab === 'press',
-      showNewsletter: () => this.setState({ tab: 'newsletter' }),
-      showPress: () => this.setState({ tab: 'press' }),
+      hasMore: shown < SORTED.length,
+      remaining: SORTED.length - shown,
+      loadMore: () => this.setState(st => ({
+        shown: Math.min(st.shown + STEP, SORTED.length)
+      })),
       showCaptions: this.props.showNewsletterCaptions ?? true,
       progress: s.progress,
       showTop: s.showTop,

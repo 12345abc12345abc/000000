@@ -78,6 +78,22 @@
 
     <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
     <section style="padding:clamp(24px,3vw,36px) 0 0">
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-bottom:clamp(4px,1vw,8px)">
+        <sc-for list="{{ years }}" as="y" hint-placeholder-count="8">
+          <sc-if value="{{ y.active }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:baseline;gap:5px;padding:7px 12px;background:#333333;color:#FFFFFF;font-size:14px;font-weight:800;letter-spacing:0.02em">
+              {{ y.label }}<span style="font-size:11px;font-weight:700;color:#FFB300">{{ y.count }}</span>
+            </span>
+          </sc-if>
+          <sc-if value="{{ !y.active }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ y.select }}" style="display:inline-flex;align-items:baseline;gap:5px;appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;padding:6px 11px;font-size:14px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">
+              {{ y.label }}<span style="font-size:11px;font-weight:700;color:rgba(51,51,51,0.45)">{{ y.count }}</span>
+            </button>
+          </sc-if>
+        </sc-for>
+      </div>
+
       <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
         <div style="padding-top:clamp(26px,3.4vw,40px)">
           <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:2px">
@@ -123,32 +139,154 @@
 </sc-if>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;showNewsletterCaptions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
-const RANK = ['매일경제','전자신문','연합뉴스','아시아경제','폴리뉴스','파이낸스투데이','데일리경제','내외경제TV','공감신문','ABC뉴스','피앤피뉴스'];
+// 인지도 높은 매체 우선. 여기에 없는 매체는 그룹 맨 뒤로 간다.
+const RANK = [
+  '매일경제','한국경제','전자신문','연합뉴스','머니투데이','이데일리','파이낸셜뉴스',
+  '아시아경제','아주경제','이투데이','뉴스핌','ZDNet Korea','딜사이트',
+  '산업일보','산업종합저널','캐드앤그래픽스','헬로티','월간로봇기술',
+  '스타트업투데이','벤처타임즈','경기일보','AI경기방송',
+  '폴리뉴스','파이낸스투데이','데일리경제','내외경제TV','공감신문','ABC뉴스','피앤피뉴스',
+  'MIN뉴스','여기에뉴스','경기연합일보','수도권일보',
+  '경기도','KOTRA','뉴스와이어'
+];
 
+// month: '2026. 09' 형식. 발행 월이 확인되지 않은 건은 '2018'처럼 연도만 쓴다(그 해 맨 뒤로 정렬).
 const ARTICLES = [
+  { m:'전자신문', month:'2026. 09', t:'전남광주 미래산업박람회 로봇융합관 — 아이지 스마트공장 기술교육 솔루션·DX Labeler 소개', u:'https://www.etnews.com/20260907000396' },
   { m:'폴리뉴스', month:'2026. 09', t:'아이지, 2026 전남광주미래산업박람회 참가…스마트공장 기술교육 솔루션 선보여', u:'https://www.polinews.co.kr/news/articleView.html?idxno=742219' },
   { m:'데일리경제', month:'2026. 09', t:'아이지, 2026 전남광주미래산업박람회서 스마트공장 기술교육 솔루션 공개', u:'https://www.kdpress.co.kr/news/articleView.html?idxno=208337' },
   { m:'내외경제TV', month:'2026. 09', t:'아이지, 주요 제조사 설비 호환 스마트 제조 실습 플랫폼 구축', u:'https://www.nbntv.co.kr/news/articleView.html?idxno=4024573' },
   { m:'공감신문', month:'2026. 09', t:'아이지, 2026 전남광주미래산업박람회서 스마트공장 기술교육 솔루션 선보여', u:'https://www.gokorea.kr/news/articleView.html?idxno=877254' },
   { m:'ABC뉴스', month:'2026. 09', t:'아이지, ‘전남광주미래산업박람회’서 스마트공장 교육 솔루션 공개', u:'https://www.abcn.kr/news/articleView.html?idxno=91344' },
+
+  { m:'전자신문', month:'2026. 08', t:'[2026 전남광주미래산업박람회] 아이지, 스마트팩토리 등 미래산업 플랫폼·장비 홍보', u:'https://www.etnews.com/20260826000174' },
+  { m:'캐드앤그래픽스', month:'2026. 08', t:'아이지, 2026년 제2차 혁신 프리미어 1000 선정… 글로벌 테크에듀 기업 도약', u:'https://www.cadgraphics.co.kr/newsview.php?catecode=2&num=78816&pages=news&sub=news01' },
+  { m:'월간로봇기술', month:'2026. 08', t:'(주)아이지, 디지털트윈 기반 아이지랩닷컴 및 현장형 실습 공간 오픈랩 개관', u:'https://robotzine.co.kr/detail/278953' },
+
   { m:'매일경제', month:'2026. 07', t:'아이지, 온·오프라인 기술교육 플랫폼 구축', u:'https://m.mk.co.kr/amp/12105344' },
-  { m:'전자신문', month:'2026. 07', t:'아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://n.news.naver.com/mnews/article/030/0003450763?sid=101' },
+  { m:'전자신문', month:'2026. 07', t:'아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://www.etnews.com/20260724000315' },
   { m:'연합뉴스', month:'2026. 07', t:'교육장비 넘어 플랫폼으로…아이지, 미래 기술교육 새판 짠다', u:'https://kgyonhapnews.net/256754' },
   { m:'아시아경제', month:'2026. 07', t:'아이지, 오픈랩·아이지랩닷컴 구축…온·오프라인 기술교육 강화', u:'https://view.asiae.co.kr/article/2026072313183421696' },
+  { m:'AI경기방송', month:'2026. 07', t:'아이지, OPEN LAB·IEGLAB.COM 구축', u:'https://www.kfm.co.kr/news/2026072466298' },
   { m:'폴리뉴스', month:'2026. 07', t:'㈜아이지, 온라인-오프라인 통합 기술교육 플랫폼 구축 “글로벌 테크에듀 생태계 조성 본격화”', u:'https://www.polinews.co.kr/news/articleView.html?idxno=737803' },
   { m:'파이낸스투데이', month:'2026. 07', t:'㈜아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://www.fntoday.co.kr/news/articleView.html?idxno=388717' },
   { m:'데일리경제', month:'2026. 07', t:'㈜아이지, 온라인-오프라인 통합 기술교육 플랫폼 구축', u:'https://www.kdpress.co.kr/news/articleView.html?idxno=207199' },
   { m:'공감신문', month:'2026. 07', t:'아이지, 온·오프라인 통합 기술교육 플랫폼 구축', u:'https://www.gokorea.kr/news/articleView.html?idxno=872870' },
-  { m:'피앤피뉴스', month:'2026. 07', t:'㈜아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://www.gosiweek.com/article/1065585674324659' }
+  { m:'피앤피뉴스', month:'2026. 07', t:'㈜아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://www.gosiweek.com/article/1065585674324659' },
+  { m:'경기도', month:'2026. 07', t:'경기도, 피지컬 AI 협의체 구성 논의 — 참여기업으로 아이지 언급', u:'https://gnews.gg.go.kr/briefing/brief_gongbo_view.do?BS_CODE=s017&number=70985' },
+  { m:'뉴스와이어', month:'2026. 07', t:'아이지, ‘2026년도 제2차 혁신 프리미어 1000’ 선정', u:'https://www.newswire.co.kr/newsRead.php?no=1039466' },
+  { m:'뉴스와이어', month:'2026. 07', t:'아이지, 온·오프라인 통합 기술 교육 플랫폼 IEGLAB.COM·OPEN LAB 구축', u:'https://www.newswire.co.kr/newsRead.php?no=1039230' },
+
+  { m:'매일경제', month:'2026. 03', t:'㈜아이지 김창일 대표이사, 성남상공대상 SW개발대상 수상…자율제조 SW 기술력 인정', u:'https://www.mk.co.kr/news/business/11990074' },
+  { m:'산업일보', month:'2026. 03', t:'아이지, 라벨링 공정 ‘골든타임’ 사수하는 자동화 장비 선보여', u:'https://kidd.co.kr/news/245447' },
+  { m:'산업종합저널', month:'2026. 03', t:'[움짤뉴스] 이제는 라벨링도 ‘DX·자동화 시대’', u:'https://industryjournal.co.kr/news/245449' },
+  { m:'경기연합일보', month:'2026. 03', t:'성남상공회의소, 제27회 성남상공대상 시상식 개최', u:'https://www.gyeonhap.com/news_view.jsp?news_cd=99' },
+  { m:'수도권일보', month:'2026. 03', t:'성남상의, 제27회 성남상공대상 시상식', u:'https://m.sudokwon.com/article.php?aid=1773796133694938003' },
+
+  { m:'매일경제', month:'2025. 10', t:'㈜아이지, ‘피지컬 AI’ 기반 가상·현실 데이터 학습으로 산업·교육 혁신 견인', u:'https://www.mk.co.kr/news/business/11452018' },
+  { m:'매일경제', month:'2025. 10', t:'제품라벨 실시간 인쇄해 부착 … 공정속도 확 높여', u:'https://www.mk.co.kr/news/business/11437758' },
+
+  { m:'파이낸셜뉴스', month:'2025. 09', t:'아이지, ‘라벨엑스포 유럽 2025’서 DX 라벨러 공개', u:'https://www.fnnews.com/news/202509251735485356' },
+
+  { m:'매일경제', month:'2025. 08', t:'“스마트팩토리 맞춤형 인재 우리가 키웁니다”', u:'https://www.mk.co.kr/news/business/11393466' },
+  { m:'머니투데이', month:'2025. 08', t:'LG전자·오스템 사로잡은 K테크에듀 선구자…독보적 기술 뭐길래', u:'https://www.mt.co.kr/future/2025/08/13/2025081307071739825' },
+  { m:'이데일리', month:'2025. 08', t:'“원조 받던 나라에서 원조하는 나라로”…아이지, K테크에듀 강자로 ‘우뚝’', u:'https://m3.edaily.co.kr/News/Read?mediaCodeNo=257&newsId=04083606642266992' },
+  { m:'파이낸셜뉴스', month:'2025. 08', t:'“라벨 갈 시간도 없다”…아이지, LG·오스템이 택한 이유', u:'https://www.fnnews.com/news/202508131058391258' },
+  { m:'파이낸셜뉴스', month:'2025. 08', t:'기술인력 비중 65%…“직업훈련 현장 디지털 선도”', u:'https://www.fnnews.com/news/202508131752117832' },
+  { m:'아시아경제', month:'2025. 08', t:'아이지, ‘K테크에듀’ 세계 표준화 꿈꾼다', u:'https://view.asiae.co.kr/article/2025081407122943030' },
+  { m:'아주경제', month:'2025. 08', t:'[르포] ‘K-테크에듀’ 아이지 “스마트팩토리 전환 선도”', u:'https://www.ajunews.com/view/20250813111413737' },
+  { m:'이투데이', month:'2025. 08', t:'[르포] 국내 테크에듀 개척한 ‘아이지’…“글로벌 K-테크에듀, 우리가 선도”', u:'https://www.etoday.co.kr/news/view/2496759' },
+
+  { m:'매일경제', month:'2025. 04', t:'아이지, NJSC TALAP과 전략적 협약…카자흐스탄 직업교육 개혁에 한국 에듀테크 모델 도입', u:'https://www.mk.co.kr/news/business/11301900' },
+  { m:'뉴스와이어', month:'2025. 04', t:'카자흐스탄 직업교육 개혁에 한국 테크에듀 모델 도입…NJSC TALAP과 MOU', u:'https://www.newswire.co.kr/newsRead.php?no=1010181' },
+
+  { m:'ZDNet Korea', month:'2025. 03', t:'뉴로메카, 아이지와 연구용 로봇 상용화 박차', u:'https://zdnet.co.kr/view/?no=20250321175959' },
+  { m:'뉴스핌', month:'2025. 03', t:'뉴로메카, 아이지와 전략적 파트너십 체결', u:'https://search.newspim.com/news/view/20250321000533' },
+
+  { m:'한국경제', month:'2024. 12', t:'신약 개발 기업·AI 전문 업체에 뭉칫돈', u:'https://www.hankyung.com/article/202412272288i' },
+  { m:'한국경제', month:'2024. 12', t:'바이오 기업 핀테라퓨틱스, 시리즈C 200억 확보 [VC브리핑]', u:'https://plus.hankyung.com/apps/newsinside.view?aid=202412246242r&category=&sns=y' },
+  { m:'전자신문', month:'2024. 12', t:'IBK벤처투자, 첫 벤처펀드 결성하고 1호 투자 개시', u:'https://www.etnews.com/20241218000403' },
+  { m:'머니투데이', month:'2024. 12', t:'설립 15년차 기술교육 기업에 50억 베팅한 벤처캐피탈, 이유는?', u:'https://www.mt.co.kr/future/2024/12/28/2024122707195683057' },
+  { m:'머니투데이', month:'2024. 12', t:'기술교육 기업 아이지, 50억원 투자 유치…“글로벌 시장 공략”', u:'https://www.mt.co.kr/future/2024/12/23/2024122313432413519' },
+  { m:'월간로봇기술', month:'2024. 12', t:'아이지, 2024 산업기술 R&D 종합대전서 ‘DX Labeler’ 선보여', u:'https://robotzine.co.kr/entry/272251' },
+  { m:'스타트업투데이', month:'2024. 12', t:'아이지, IBK벤처투자·코오롱인베스트먼트로부터 총 50억 규모 투자 유치', u:'https://www.startuptoday.kr/news/articleView.html?idxno=49823' },
+  { m:'벤처타임즈', month:'2024. 12', t:'아이지, 50억원 규모의 벤처투자 유치', u:'https://www.vtimes.kr/news/articleView.html?idxno=51206' },
+  { m:'뉴스와이어', month:'2024. 12', t:'아이지, 50억 벤처투자 유치하며 글로벌 Tech-edu 시장 도약 예고', u:'https://www.newswire.co.kr/newsRead.php?no=1003382' },
+  { m:'뉴스와이어', month:'2024. 12', t:'2024 산업기술 R&D 종합대전서 ‘DX Labeler’ 선보여', u:'https://www.newswire.co.kr/newsRead.php?no=1001968' },
+
+  { m:'MIN뉴스', month:'2024. 10', t:'아이지, DX기반 스마트 라벨링 로봇 시스템 도입으로 자동화 혁신 추진', u:'https://minnews.co.kr/atl/view.asp?a_id=13399' },
+  { m:'뉴스와이어', month:'2024. 10', t:'DX기반 스마트 라벨링 로봇 시스템 도입으로 자동화 혁신 추진', u:'https://www.newswire.co.kr/newsRead.php?no=998202' },
+
+  { m:'월간로봇기술', month:'2024. 09', t:'(주)아이지, 만지고, 분해하고, 조립하는 반도체 공정 교육 ‘실습시대’ 연다', u:'https://robotzine.co.kr/entry/271363' },
+  { m:'뉴스와이어', month:'2024. 09', t:'반도체 플라즈마 응용 실습 장비 개발…공급 본격화', u:'https://www.newswire.co.kr/newsRead.php?no=997119' },
+  { m:'뉴스와이어', month:'2024. 09', t:'케냐 고등과학기술원 사업 위한 550만달러 규모 첨단 기자재 선적 완료', u:'https://www.newswire.co.kr/newsRead.php?no=997039' },
+
+  { m:'뉴스와이어', month:'2024. 07', t:'우즈베키스탄 SIUT 총장, 윤 대통령 순방 이후 반도체 인력 양성 인프라 위해 아이지 방문', u:'https://www.newswire.co.kr/newsRead.php?no=992815' },
+  { m:'뉴스와이어', month:'2024. 07', t:'Kenya-AIST KoTDA 건축실행위원회 6인, 아이지 방문·프로젝트 현장 점검', u:'https://www.newswire.co.kr/newsRead.php?no=992483' },
+
+  { m:'딜사이트', month:'2024. 05', t:'[재계는 지금] 아이지, 8대 공정 구현한 반도체 테스트베드 출시', u:'https://dealsite.co.kr/articles/122460' },
+  { m:'월간로봇기술', month:'2024. 05', t:'아이지, 반도체 분야 인력양성 교육 판도 바꾼다', u:'https://robotzine.co.kr/entry/270034' },
+  { m:'뉴스와이어', month:'2024. 05', t:'아이지, 반도체 분야 인력양성 교육 판도 바꾼다…8대 공정 구현 테스트베드 출시', u:'https://www.newswire.co.kr/newsRead.php?no=989357' },
+
+  { m:'전자신문', month:'2024. 02', t:'아이지, 에픽 파트너십 강화…“미래차 기술 교육 새 장 연다”', u:'https://www.etnews.com/20240214000220' },
+
+  { m:'뉴스핌', month:'2023. 04', t:'아이지, 반도체 인력 양성 위한 표준 반도체공정 실습 장치 개발', u:'https://www.newspim.com/news/view/20230427000746' },
+
+  { m:'전자신문', month:'2021. 09', t:'아이지, 기술력 확보와 우수 혁신기업 선정 통해 메타버스 기업으로 도약', u:'https://www.etnews.com/20210924000137' },
+
+  { m:'헬로티', month:'2020. 03', t:'아이지, “조직 혁신 DNA 도출 및 내재화 정기 교육 실시”', u:'https://www.hellot.net/news/article.html?no=50819' },
+  { m:'월간로봇기술', month:'2020', t:'(주)아이지, 첨단기술 융합된 방역로봇 개발', u:'https://robotzine.co.kr/entry/252960' },
+
+  { m:'매일경제', month:'2019. 03', t:'교육훈련 장비업체 아이지 “스마트공장 교육훈련 장비, 우리가 으뜸”', u:'https://www.mk.co.kr/news/business/8714501' },
+
+  { m:'경기일보', month:'2018. 11', t:'기술개발 올인…4차 산업혁명 꿈꾼다 ㈜아이지', u:'https://www.kyeonggi.com/article/201811261027232' },
+  { m:'월간로봇기술', month:'2018. 10', t:'(주)아이지, 스마트공장 전문 기업으로 거듭나다', u:'https://robotzine.co.kr/entry/241134' },
+  { m:'매일경제', month:'2018', t:'스마트공장 실습실 구축, 삼성 등 대기업도 러브콜', u:'https://www.mk.co.kr/news/business/8480010' },
+
+  { m:'월간로봇기술', month:'2017. 04', t:'교육장비 분야의 新시장 여는 (주)아이지', u:'https://robotzine.co.kr/entry/215716' },
+  { m:'KOTRA', month:'2017', t:'교육훈련 장비 분야 일류기업, 아이지', u:'https://www.k-neiss.org/kotra/success-case/187' },
+
+  { m:'여기에뉴스', month:'2014. 02', t:'인력양성의 첨병으로 나선 (주)아이지 “로봇기술 배우러 오셨어요?”', u:'https://yeogienews.com/entry/46364' }
 ];
 
-const MONTHS = ['2026. 09', '2026. 07'];
-const MONTH_SUB = { '2026. 09': '2026 전남광주미래산업박람회', '2026. 07': 'OPEN LAB · IEGLAB.COM 통합 기술교육 플랫폼' };
+const MONTH_SUB = {
+  '2026. 09': '2026 전남광주미래산업박람회',
+  '2026. 08': '혁신 프리미어 1000 선정 · OPEN LAB 개관',
+  '2026. 07': 'OPEN LAB · IEGLAB.COM 통합 기술교육 플랫폼',
+  '2026. 03': '성남상공대상 SW개발대상 · 나라장터 엑스포',
+  '2025. 10': '피지컬 AI · DX Labeler',
+  '2025. 09': '라벨엑스포 유럽 2025',
+  '2025. 08': 'K-테크에듀 기획 보도',
+  '2025. 04': '카자흐스탄 NJSC TALAP 전략적 협약',
+  '2025. 03': '뉴로메카 전략적 파트너십',
+  '2024. 12': '50억원 벤처투자 유치 · 산업기술 R&D 종합대전',
+  '2024. 10': 'DX 기반 스마트 라벨링 로봇 시스템',
+  '2024. 09': '반도체 공정 실습 · 케냐 AIST 기자재 선적',
+  '2024. 07': '우즈베키스탄 SIUT · 케냐 KoTDA 방문',
+  '2024. 05': '반도체 8대 공정 테스트베드 출시',
+  '2024. 02': '에픽 파트너십 · 미래차 기술 교육',
+  '2023. 04': '표준 반도체공정 실습 장치 개발',
+  '2021. 09': '메타버스 기업 도약',
+  '2020. 03': '조직 혁신 DNA 내재화 교육',
+  '2020': '발행 월 미상 · 방역로봇 개발',
+  '2019. 03': '스마트공장 교육훈련 장비',
+  '2018. 11': '4차 산업혁명 기술개발',
+  '2018. 10': '스마트공장 전문 기업 전환',
+  '2018': '발행 월 미상 · 스마트공장 실습실 구축',
+  '2017. 04': '교육장비 분야 신시장 개척',
+  '2017': '발행 월 미상 · KOTRA 일류기업 성공사례',
+  '2014. 02': '로봇기술 인력양성'
+};
+
 const PAGES = ['uploads/1.png', 'uploads/2.png'];
+
+const yearOf = (month) => month.slice(0, 4);
+const YEARS = [...new Set(ARTICLES.map(a => yearOf(a.month)))].sort().reverse();
+const rankOf = (media) => { const i = RANK.indexOf(media); return i === -1 ? RANK.length : i; };
 
 class Component extends DCLogic {
   state = {
-    tab: 'newsletter', modalIndex: null, progress: 0, showTop: false
+    tab: 'newsletter', year: YEARS[0], modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
@@ -181,19 +319,31 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
 
-    const groups = MONTHS.map(mo => ({
+    const years = YEARS.map(y => ({
+      label: y,
+      count: ARTICLES.filter(a => yearOf(a.month) === y).length,
+      active: y === s.year,
+      select: () => this.setState({ year: y })
+    }));
+
+    const inYear = ARTICLES.filter(a => yearOf(a.month) === s.year);
+    // '2018'(월 미상)은 '2018. 10'의 접두사라 내림차순에서 그 해 맨 뒤로 간다.
+    const months = [...new Set(inYear.map(a => a.month))].sort().reverse();
+
+    const groups = months.map(mo => ({
       label: mo,
-      sub: MONTH_SUB[mo],
-      items: ARTICLES.filter(a => a.month === mo)
-        .sort((a, b) => RANK.indexOf(a.m) - RANK.indexOf(b.m))
+      sub: MONTH_SUB[mo] || '',
+      items: inYear.filter(a => a.month === mo)
+        .sort((a, b) => rankOf(a.m) - rankOf(b.m))
         .map(a => ({ media: a.m, title: a.t, url: a.u }))
-    })).filter(g => g.items.length > 0);
+    }));
 
     return {
       isNewsletter: s.tab === 'newsletter',
       isPress: s.tab === 'press',
       showNewsletter: () => this.setState({ tab: 'newsletter' }),
       showPress: () => this.setState({ tab: 'press' }),
+      years,
       showCaptions: this.props.showNewsletterCaptions ?? true,
       progress: s.progress,
       showTop: s.showTop,

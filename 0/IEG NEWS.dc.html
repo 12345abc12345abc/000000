@@ -79,49 +79,48 @@
     <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
     <section style="padding:clamp(24px,3vw,36px) 0 0">
 
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-bottom:clamp(4px,1vw,8px)">
-        <sc-for list="{{ years }}" as="y" hint-placeholder-count="8">
-          <sc-if value="{{ y.active }}" hint-placeholder-val="{{ false }}">
-            <span style="display:inline-flex;align-items:baseline;gap:5px;padding:7px 12px;background:#333333;color:#FFFFFF;font-size:14px;font-weight:800;letter-spacing:0.02em">
-              {{ y.label }}<span style="font-size:11px;font-weight:700;color:#FFB300">{{ y.count }}</span>
-            </span>
-          </sc-if>
-          <sc-if value="{{ !y.active }}" hint-placeholder-val="{{ true }}">
-            <button onClick="{{ y.select }}" style="display:inline-flex;align-items:baseline;gap:5px;appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;padding:6px 11px;font-size:14px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">
-              {{ y.label }}<span style="font-size:11px;font-weight:700;color:rgba(51,51,51,0.45)">{{ y.count }}</span>
-            </button>
-          </sc-if>
-        </sc-for>
+      <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:clamp(8px,1.4vw,14px)">
+        <span style="font-size:13px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.55)">전체 {{ total }}건</span>
+        <span style="font-size:13px;font-weight:700;letter-spacing:0.02em;color:rgba(51,51,51,0.55)">{{ rangeLabel }}</span>
       </div>
 
-      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
-        <div style="padding-top:clamp(26px,3.4vw,40px)">
-          <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:2px">
-            <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">{{ g.label }}</span>
-            <span style="font-size:13px;font-weight:600;color:rgba(51,51,51,0.5)">{{ g.sub }}</span>
-          </div>
-          <div style="display:grid;gap:0 clamp(28px,4vw,56px);grid-template-columns:repeat(auto-fill,minmax(380px,1fr))">
-            <sc-for list="{{ g.items }}" as="item" hint-placeholder-count="5">
-              <div style="display:flex;align-items:flex-start;gap:14px;padding:20px 0;border-top:1px solid rgba(51,51,51,0.2);transition:border-color .15s" style-hover="border-top-color:#FF0000">
-                <sc-if value="{{ item.img }}" hint-placeholder-val="{{ true }}">
-                  <a href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true" style="flex:0 0 auto;display:block;width:104px;height:72px;overflow:hidden;background:#EFE9DE;border:1px solid rgba(51,51,51,0.14)">
-                    <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer" style="display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s" style-hover="transform:scale(1.05)">
-                  </a>
-                </sc-if>
-                <div style="min-width:0;display:flex;flex-direction:column;gap:9px">
-                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:7px">
-                    <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#FF0000">{{ item.media }}</span>
-                    <sc-if value="{{ item.note }}" hint-placeholder-val="{{ false }}">
-                      <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;color:rgba(51,51,51,0.5);border:1px solid rgba(51,51,51,0.22);padding:1px 5px">{{ item.note }}</span>
-                    </sc-if>
-                  </div>
-                  <a href="{{ item.url }}" target="_blank" rel="noopener" style="font-size:17px;font-weight:700;line-height:1.5;text-wrap:pretty;transition:color .15s">{{ item.title }}</a>
-                </div>
-              </div>
-            </sc-for>
+      <sc-for list="{{ items }}" as="item" hint-placeholder-count="12">
+        <div style="display:flex;align-items:flex-start;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.2vw,22px) 0;border-top:1px solid rgba(51,51,51,0.2);transition:border-color .15s" style-hover="border-top-color:#FF0000">
+          <sc-if value="{{ item.img }}" hint-placeholder-val="{{ true }}">
+            <a href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true" style="flex:0 0 auto;display:block;width:clamp(88px,11vw,132px);height:clamp(62px,7.6vw,92px);overflow:hidden;background:#EFE9DE;border:1px solid rgba(51,51,51,0.14)">
+              <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer" style="display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s" style-hover="transform:scale(1.05)">
+            </a>
+          </sc-if>
+          <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:800;letter-spacing:0.04em;color:rgba(51,51,51,0.45)">{{ item.month }}</span>
+              <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#FF0000">{{ item.media }}</span>
+              <sc-if value="{{ item.note }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;color:rgba(51,51,51,0.5);border:1px solid rgba(51,51,51,0.22);padding:1px 5px">{{ item.note }}</span>
+              </sc-if>
+            </div>
+            <a href="{{ item.url }}" target="_blank" rel="noopener" style="font-size:clamp(16px,1.9vw,19px);font-weight:700;line-height:1.45;text-wrap:pretty;transition:color .15s">{{ item.title }}</a>
           </div>
         </div>
       </sc-for>
+
+      <div style="border-top:1px solid #333333;margin-top:2px"></div>
+      <nav style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:clamp(22px,3vw,32px) 0 0">
+        <sc-if value="{{ hasPrev }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ goPrev }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">‹</button>
+        </sc-if>
+        <sc-for list="{{ pages }}" as="p" hint-placeholder-count="5">
+          <sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;background:#333333;color:#FFFFFF;font-size:15px;font-weight:800">{{ p.label }}</span>
+          </sc-if>
+          <sc-if value="{{ !p.active }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ p.select }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:700;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">{{ p.label }}</button>
+          </sc-if>
+        </sc-for>
+        <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ goNext }}" style="appearance:none;border:1px solid rgba(51,51,51,0.2);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.7);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">›</button>
+        </sc-if>
+      </nav>
 
     </section>
     </sc-if>
@@ -240,43 +239,22 @@ const ARTICLES = [
   { m:'여기에뉴스', month:'2014. 02', t:'인력양성의 첨병으로 나선 (주)아이지 “로봇기술 배우러 오셨어요?”', u:'https://yeogienews.com/entry/46364', img:'https://file.yeogie.com/img.news/20142/UAZ2I70I1L.png' }
 ];
 
-const MONTH_SUB = {
-  '2026. 09': '2026 전남광주미래산업박람회',
-  '2026. 08': '혁신 프리미어 1000 선정 · OPEN LAB 개관',
-  '2026. 07': 'OPEN LAB · IEGLAB.COM 통합 기술교육 플랫폼',
-  '2026. 03': '성남상공대상 SW개발대상 · 나라장터 엑스포',
-  '2025. 10': '피지컬 AI · DX Labeler',
-  '2025. 09': '라벨엑스포 유럽 2025',
-  '2025. 08': 'K-테크에듀 기획 보도',
-  '2025. 04': '카자흐스탄 NJSC TALAP 전략적 협약',
-  '2025. 03': '뉴로메카 전략적 파트너십',
-  '2024. 12': '50억원 벤처투자 유치 · 산업기술 R&D 종합대전',
-  '2024. 10': 'DX 기반 스마트 라벨링 로봇 시스템',
-  '2024. 09': '반도체 공정 교육 · 플라즈마 응용 실습 장비',
-  '2024. 05': '반도체 8대 공정 테스트베드 출시',
-  '2024. 02': '에픽 파트너십 · 미래차 기술 교육',
-  '2023. 04': '표준 반도체공정 실습 장치 개발',
-  '2021. 09': '메타버스 기업 도약',
-  '2020. 03': '조직 혁신 DNA 내재화 교육',
-  '2020': '발행 월 미상 · 방역로봇 개발',
-  '2019. 03': '스마트공장 교육훈련 장비',
-  '2018. 11': '4차 산업혁명 기술개발',
-  '2018. 10': '스마트공장 전문 기업 전환',
-  '2018': '발행 월 미상 · 스마트공장 실습실 구축',
-  '2017. 04': '교육장비 분야 신시장 개척',
-  '2017': '발행 월 미상 · KOTRA 일류기업 성공사례',
-  '2014. 02': '로봇기술 인력양성'
-};
-
 const PAGES = ['uploads/1.png', 'uploads/2.png'];
 
-const yearOf = (month) => month.slice(0, 4);
-const YEARS = [...new Set(ARTICLES.map(a => yearOf(a.month)))].sort().reverse();
+const PER_PAGE = 12;
+
 const rankOf = (media) => { const i = RANK.indexOf(media); return i === -1 ? RANK.length : i; };
+
+// 최신 월이 위로. 같은 월 안에서는 RANK 순(메이저 언론사 우선).
+// '2018'(월 미상)은 '2018. 10'의 접두사라 내림차순에서 그 해 맨 뒤로 간다.
+const SORTED = [...ARTICLES].sort((a, b) =>
+  a.month === b.month ? rankOf(a.m) - rankOf(b.m) : (a.month < b.month ? 1 : -1)
+);
+const PAGE_COUNT = Math.max(1, Math.ceil(SORTED.length / PER_PAGE));
 
 class Component extends DCLogic {
   state = {
-    tab: 'newsletter', year: YEARS[0], modalIndex: null, progress: 0, showTop: false
+    tab: 'newsletter', page: 1, modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
@@ -309,36 +287,42 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
 
-    const years = YEARS.map(y => ({
-      label: y,
-      count: ARTICLES.filter(a => yearOf(a.month) === y).length,
-      active: y === s.year,
-      select: () => this.setState({ year: y })
-    }));
+    const page = Math.min(Math.max(1, s.page), PAGE_COUNT);
+    const start = (page - 1) * PER_PAGE;
+    const slice = SORTED.slice(start, start + PER_PAGE);
 
-    const inYear = ARTICLES.filter(a => yearOf(a.month) === s.year);
-    // '2018'(월 미상)은 '2018. 10'의 접두사라 내림차순에서 그 해 맨 뒤로 간다.
-    const months = [...new Set(inYear.map(a => a.month))].sort().reverse();
+    // 페이지를 바꾸면 목록 위쪽이 보이도록 맨 위로 올린다.
+    const goTo = (n) => {
+      this.setState({ page: n });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-    const groups = months.map(mo => ({
-      label: mo,
-      sub: MONTH_SUB[mo] || '',
-      items: inYear.filter(a => a.month === mo)
-        .sort((a, b) => rankOf(a.m) - rankOf(b.m))
-        .map(a => ({ media: a.m, title: a.t, url: a.u, note: a.note || '', img: a.img || '' }))
+    const pages = Array.from({ length: PAGE_COUNT }, (_, i) => ({
+      label: String(i + 1),
+      active: i + 1 === page,
+      select: () => goTo(i + 1)
     }));
 
     return {
+      total: SORTED.length,
+      rangeLabel: (start + 1) + '–' + (start + slice.length) + ' / ' + SORTED.length,
+      items: slice.map(a => ({
+        month: a.month, media: a.m, title: a.t, url: a.u,
+        note: a.note || '', img: a.img || ''
+      })),
+      pages,
+      hasPrev: page > 1,
+      hasNext: page < PAGE_COUNT,
+      goPrev: () => goTo(page - 1),
+      goNext: () => goTo(page + 1),
       isNewsletter: s.tab === 'newsletter',
       isPress: s.tab === 'press',
       showNewsletter: () => this.setState({ tab: 'newsletter' }),
       showPress: () => this.setState({ tab: 'press' }),
-      years,
       showCaptions: this.props.showNewsletterCaptions ?? true,
       progress: s.progress,
       showTop: s.showTop,
       scrollTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-      groups,
       modalOpen: s.modalIndex !== null,
       pageLabel: s.modalIndex !== null ? 'PAGE 0' + (s.modalIndex + 1) + ' / 0' + PAGES.length : '',
       modalImage: s.modalIndex !== null

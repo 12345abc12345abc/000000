@@ -56,36 +56,41 @@
 
     <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
     <section style="padding:clamp(28px,3.4vw,44px) 0 clamp(32px,4vw,52px)">
-      <div style="max-width:860px;margin:0 auto">
-        <div style="margin-bottom:clamp(16px,2.2vw,22px)">
+      <div style="max-width:940px;margin:0 auto">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(16px,2.2vw,22px)">
           <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
+          <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
+            <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ sheetLabel }}</span>
+          </sc-if>
         </div>
 
         <figure style="margin:0;display:flex;flex-direction:column;gap:14px">
-          <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
-          <div style="position:relative;box-sizing:border-box;padding:0 34px 34px 0">
-            <sc-for list="{{ stackLayers }}" as="L" hint-placeholder-count="1">
-              <div aria-hidden="true" style="position:absolute;top:0;left:0;right:34px;bottom:34px;transform:{{ L.shift }};background:{{ L.shade }};border:1px solid rgba(51,51,51,0.22);box-shadow:{{ L.shadow }}"></div>
-            </sc-for>
+          <!-- 화살표는 지면 양옆 바깥에 두어 지면을 가리지 않는다. -->
+          <div style="display:flex;align-items:center;gap:clamp(6px,1.4vw,16px)">
+            <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ prevSheet }}" aria-label="이전 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
+            </sc-if>
 
-            <div onClick="{{ openSheet }}" style="position:relative;z-index:1;overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.22);box-shadow:0 4px 14px rgba(51,51,51,0.10);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.18)">
-              <img src="{{ sheetImage }}" alt="{{ sheetAlt }}" style="display:block;width:100%;height:auto">
+            <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
+            <div style="flex:1 1 auto;min-width:0;position:relative;box-sizing:border-box;padding:0 30px 30px 0">
+              <sc-for list="{{ stackLayers }}" as="L" hint-placeholder-count="1">
+                <div aria-hidden="true" style="position:absolute;top:0;left:0;right:30px;bottom:30px;transform:{{ L.shift }};background:{{ L.shade }};border:1px solid rgba(51,51,51,0.22);box-shadow:{{ L.shadow }}"></div>
+              </sc-for>
+
+              <div onClick="{{ openSheet }}" style="position:relative;z-index:1;overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.22);box-shadow:0 4px 14px rgba(51,51,51,0.10);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.18)">
+                <img src="{{ sheetImage }}" alt="{{ sheetAlt }}" style="display:block;width:100%;height:auto">
+              </div>
             </div>
+
+            <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ nextSheet }}" aria-label="다음 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
+            </sc-if>
           </div>
 
           <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
             <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">{{ sheetCaption }}</figcaption>
           </sc-if>
         </figure>
-
-        <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
-          <div style="border-top:1px solid #333333;margin-top:clamp(14px,2vw,20px)"></div>
-          <nav style="display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,20px);padding:clamp(14px,2vw,20px) 0 0">
-            <button onClick="{{ prevSheet }}" aria-label="이전 면" style="display:flex;align-items:center;justify-content:center;width:46px;height:40px;appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:20px;font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
-            <span style="min-width:108px;text-align:center;font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.55)">{{ sheetLabel }}</span>
-            <button onClick="{{ nextSheet }}" aria-label="다음 면" style="display:flex;align-items:center;justify-content:center;width:46px;height:40px;appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:20px;font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
-          </nav>
-        </sc-if>
       </div>
     </section>
     </sc-if>

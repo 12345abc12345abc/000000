@@ -55,25 +55,39 @@
     </header>
 
     <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
-    <section style="padding:clamp(40px,5vw,64px) 0 clamp(32px,4vw,52px)">
-      <span style="display:inline-block;margin:0 0 clamp(14px,2vw,20px);padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(20px,3vw,36px)">
+    <section style="padding:clamp(28px,3.4vw,44px) 0 clamp(32px,4vw,52px)">
+      <div style="max-width:860px;margin:0 auto">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(14px,2vw,20px)">
+          <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
+          <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ sheetLabel }}</span>
+        </div>
+
         <figure style="margin:0;display:flex;flex-direction:column;gap:12px">
-          <div onClick="{{ openPage1 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
-            <img src="uploads/1.png" alt="IEG 소식지 1면" style="display:block;width:100%;height:auto">
+          <div onClick="{{ openSheet }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16)">
+            <img src="{{ sheetImage }}" alt="{{ sheetAlt }}" style="display:block;width:100%;height:auto">
           </div>
           <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분</figcaption>
+            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">{{ sheetCaption }}</figcaption>
           </sc-if>
         </figure>
-        <figure style="margin:0;display:flex;flex-direction:column;gap:12px">
-          <div onClick="{{ openPage2 }}" style="overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.18);transition:border-color .15s,box-shadow .2s,transform .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.16);transform:translateY(-3px)">
-            <img src="uploads/2.png" alt="IEG 소식지 2면" style="display:block;width:100%;height:auto">
-          </div>
-          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회</figcaption>
+
+        <div style="border-top:1px solid #333333;margin-top:clamp(16px,2.2vw,22px)"></div>
+        <nav style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:clamp(16px,2.2vw,22px) 0 0">
+          <sc-if value="{{ sheetHasPrev }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ prevSheet }}" style="appearance:none;border:1px solid rgba(51,51,51,0.28);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.6);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">‹</button>
           </sc-if>
-        </figure>
+          <sc-for list="{{ sheets }}" as="p" hint-placeholder-count="2">
+            <sc-if value="{{ p.active }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border:1px solid #333333;background:#333333;color:#FFFFFF;font-size:15px;font-weight:800">{{ p.label }}</span>
+            </sc-if>
+            <sc-if value="{{ !p.active }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ p.select }}" style="appearance:none;border:1px solid rgba(51,51,51,0.28);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:700;color:rgba(51,51,51,0.6);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">{{ p.label }}</button>
+            </sc-if>
+          </sc-for>
+          <sc-if value="{{ sheetHasNext }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ nextSheet }}" style="appearance:none;border:1px solid rgba(51,51,51,0.28);background:transparent;min-width:36px;height:36px;padding:0 10px;font-size:15px;font-weight:800;color:rgba(51,51,51,0.6);cursor:pointer;transition:color .15s,border-color .15s" style-hover="color:#FF0000;border-color:#FF0000">›</button>
+          </sc-if>
+        </nav>
       </div>
     </section>
     </sc-if>
@@ -236,7 +250,13 @@ const ARTICLES = [
   { m:'여기에뉴스', month:'2014. 02', t:'인력양성의 첨병으로 나선 (주)아이지 “로봇기술 배우러 오셨어요?”', u:'https://yeogienews.com/entry/46364', img:'https://file.yeogie.com/img.news/20142/UAZ2I70I1L.png' }
 ];
 
+// 소식지 지면. 한 번에 한 면씩 보여주고 번호로 넘긴다.
 const PAGES = ['uploads/1.png', 'uploads/2.png'];
+const PAGE_CAPTIONS = [
+  'PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분',
+  'PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회'
+];
+const pad2 = (n) => (n < 10 ? '0' + n : String(n));
 
 const PER_PAGE = 10;
 
@@ -251,13 +271,13 @@ const PAGE_COUNT = Math.max(1, Math.ceil(SORTED.length / PER_PAGE));
 
 class Component extends DCLogic {
   state = {
-    tab: 'newsletter', page: 1, modalIndex: null, progress: 0, showTop: false
+    tab: 'newsletter', page: 1, sheet: 0, modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
     this._onKey = (e) => {
       if (this.state.modalIndex !== null) {
-        if (e.key === 'Escape') this.setState({ modalIndex: null });
+        if (e.key === 'Escape') this.setState(st => ({ modalIndex: null, sheet: st.modalIndex ?? st.sheet }));
         if (e.key === 'ArrowRight') this.step(1);
         if (e.key === 'ArrowLeft') this.step(-1);
       }
@@ -300,7 +320,24 @@ class Component extends DCLogic {
       select: () => goTo(i + 1)
     }));
 
+    const sheet = Math.min(Math.max(0, s.sheet), PAGES.length - 1);
+    const sheets = PAGES.map((_, i) => ({
+      label: String(i + 1),
+      active: i === sheet,
+      select: () => this.setState({ sheet: i })
+    }));
+
     return {
+      sheetImage: PAGES[sheet],
+      sheetAlt: 'IEG 소식지 ' + (sheet + 1) + '면',
+      sheetCaption: PAGE_CAPTIONS[sheet] || '',
+      sheetLabel: 'PAGE ' + pad2(sheet + 1) + ' / ' + pad2(PAGES.length),
+      sheets,
+      sheetHasPrev: sheet > 0,
+      sheetHasNext: sheet < PAGES.length - 1,
+      prevSheet: () => this.setState({ sheet: sheet - 1 }),
+      nextSheet: () => this.setState({ sheet: sheet + 1 }),
+      openSheet: () => this.setState({ modalIndex: sheet }),
       items: slice.map(a => ({
         month: a.month, media: a.m, title: a.t, url: a.u,
         note: a.note || '', img: a.img || ''
@@ -327,11 +364,10 @@ class Component extends DCLogic {
             style: { maxWidth: 'min(920px,88vw)', maxHeight: '88vh', width: 'auto', height: 'auto', objectFit: 'contain', background: '#FFFDF8', boxShadow: '0 24px 60px rgba(0,0,0,0.45)' }
           })
         : null,
-      openPage1: () => this.setState({ modalIndex: 0 }),
-      openPage2: () => this.setState({ modalIndex: 1 }),
       prevPage: (e) => { e.stopPropagation(); this.step(-1); },
       nextPage: (e) => { e.stopPropagation(); this.step(1); },
-      closeModal: () => this.setState({ modalIndex: null })
+      // 확대 보기에서 넘긴 면을 닫은 뒤에도 그대로 보여준다.
+      closeModal: () => this.setState(st => ({ modalIndex: null, sheet: st.modalIndex ?? st.sheet }))
     };
   }
 }

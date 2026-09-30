@@ -1,2 +1,3 @@
 dist/
 .vercel/
+.claude/settings.local.json

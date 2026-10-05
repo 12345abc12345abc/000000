@@ -77,6 +77,10 @@
                 <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
                   <button onClick="{{ g.prev }}" aria-label="이전 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
                 </sc-if>
+                <!-- 면이 하나뿐인 호도 화살표 자리를 비워둬 지면 폭을 다른 호와 맞춘다. -->
+                <sc-if value="{{ !g.multi }}" hint-placeholder-val="{{ false }}">
+                  <div aria-hidden="true" style="flex:0 0 auto;width:clamp(30px,4vw,44px)"></div>
+                </sc-if>
 
                 <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
                 <div style="flex:1 1 auto;min-width:0;position:relative;box-sizing:border-box;padding:0 30px 30px 0">
@@ -91,6 +95,9 @@
 
                 <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
                   <button onClick="{{ g.next }}" aria-label="다음 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
+                </sc-if>
+                <sc-if value="{{ !g.multi }}" hint-placeholder-val="{{ false }}">
+                  <div aria-hidden="true" style="flex:0 0 auto;width:clamp(30px,4vw,44px)"></div>
                 </sc-if>
               </div>
 

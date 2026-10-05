@@ -25,6 +25,8 @@
     --ease: cubic-bezier(.2,.8,.2,1);
   }
   html, body { margin: 0; padding: 0; background: var(--paper); scroll-behavior: smooth; }
+  /* 탭을 바꿀 때 스크롤바가 생겼다 사라지며 화면이 좌우로 흔들리는 걸 막는다 */
+  html { scrollbar-gutter: stable; overflow-y: scroll; }
   body { font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); }
   * { font-family: inherit; }
   a { color: var(--ink); text-decoration: none; }
@@ -33,22 +35,29 @@
   :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
   @keyframes iegIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-  /* ── 소식지: 호 카드 그리드 ── */
-  .ieg-issues {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: clamp(28px, 4vw, 52px) clamp(24px, 3.5vw, 44px);
+  /* ── 소식지: 한 호가 한 화면 ── */
+  .ieg-screen {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: clamp(16px, 2.4vh, 28px);
+    padding: clamp(28px, 5vh, 64px) 0;
   }
-  .ieg-card { position: relative; display: flex; flex-direction: column; gap: 14px; }
-
-  /* 미리보기 상자. 호마다 면 수가 달라도 크기는 항상 같다.
-     지면을 좌우 15% 안쪽에 두어, 펼쳐질 때 그 여백 안에서만 벌어지고
-     옆 카드를 침범하지 않는다. */
-  .ieg-fan {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 0.96;
+  .ieg-screen + .ieg-screen { border-top: 1px solid var(--line); }
+  /* 지면들은 가로로 나란히, 화면 높이에 맞춰 커진다 */
+  .ieg-pages {
+    display: flex; flex-wrap: wrap;
+    align-items: flex-start; justify-content: center;
+    gap: clamp(14px, 2vw, 30px);
   }
+  .ieg-sheet {
+    flex: 0 1 auto; display: block; padding: 0; overflow: hidden;
+    cursor: zoom-in; background: var(--sheet);
+    border: 1px solid rgba(51,51,51,0.22);
+    box-shadow: 0 4px 16px rgba(51,51,51,0.10);
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .2s var(--ease);
+  }
+  .ieg-sheet img { display: block; width: auto; max-width: 100%; max-height: 62vh; object-fit: contain; }
+  .ieg-sheet:hover { transform: translateY(-5px); border-color: var(--red); box-shadow: 0 16px 34px rgba(51,51,51,0.20); }
 
   /* 공통 조각 — 배지·메타·버튼은 어디서든 같은 모양을 쓴다 */
   .ieg-chip {
@@ -73,50 +82,6 @@
   .ieg-btn:hover { color: var(--red); border-color: var(--red); }
   .ieg-btn.is-on { background: var(--ink); border-color: var(--ink); color: #FFFFFF; font-weight: 800; cursor: default; }
   .ieg-btn.is-on:hover { color: #FFFFFF; border-color: var(--ink); }
-  /* 지면 한 장 = 버튼 하나. 뒷장을 누르면 그 면이 열린다. */
-  .ieg-pg {
-    position: absolute;
-    left: 15%; right: 15%; top: 3%; bottom: 5%;
-    width: auto; height: auto;
-    display: block;
-    padding: 0;
-    overflow: hidden;
-    cursor: zoom-in;
-    background: var(--sheet);
-    border: 1px solid rgba(51,51,51,0.22);
-    transform-origin: 50% 90%;
-    transition: transform .45s var(--ease), box-shadow .35s var(--ease), border-color .2s var(--ease);
-    box-shadow: 0 2px 10px rgba(51,51,51,0.10);
-  }
-  .ieg-pg img { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .ieg-pg:hover { border-color: var(--red); }
-  /* 쌓인 상태 — 뒤로 갈수록 조금씩 밀리고 기운다 */
-  .ieg-pg:nth-child(1) { z-index: 4; }
-  .ieg-pg:nth-child(2) { z-index: 3; transform: translate(3%, 1.5%) rotate(2deg); }
-  .ieg-pg:nth-child(3) { z-index: 2; transform: translate(6%, 3%) rotate(4deg); }
-  .ieg-pg:nth-child(4) { z-index: 1; transform: translate(9%, 4.5%) rotate(6deg); }
-
-  /* 펼친 상태 — 면 수에 따라 좌우로 고르게 벌어진다 */
-  .ieg-fan:is(:hover, :focus-visible) .ieg-pg { box-shadow: 0 12px 26px rgba(51,51,51,0.20); }
-
-  .ieg-fan.n2:is(:hover, :focus-visible) .ieg-pg:nth-child(1) { transform: translate(-17%, -2%) rotate(-5deg); }
-  .ieg-fan.n2:is(:hover, :focus-visible) .ieg-pg:nth-child(2) { transform: translate(17%, -2%) rotate(5deg); }
-
-  .ieg-fan.n3:is(:hover, :focus-visible) .ieg-pg:nth-child(1) { transform: translate(-18%, -1%) rotate(-6deg); }
-  .ieg-fan.n3:is(:hover, :focus-visible) .ieg-pg:nth-child(2) { transform: translate(0, -4%) rotate(0deg); }
-  .ieg-fan.n3:is(:hover, :focus-visible) .ieg-pg:nth-child(3) { transform: translate(18%, -1%) rotate(6deg); }
-
-  .ieg-fan.n4:is(:hover, :focus-visible) .ieg-pg:nth-child(1) { transform: translate(-18%, 0) rotate(-6deg); }
-  .ieg-fan.n4:is(:hover, :focus-visible) .ieg-pg:nth-child(2) { transform: translate(-6%, -4%) rotate(-2deg); }
-  .ieg-fan.n4:is(:hover, :focus-visible) .ieg-pg:nth-child(3) { transform: translate(6%, -4%) rotate(2deg); }
-  .ieg-fan.n4:is(:hover, :focus-visible) .ieg-pg:nth-child(4) { transform: translate(18%, 0) rotate(6deg); }
-
-  /* 한 장짜리 호는 펼칠 게 없으니 살짝 떠오르기만 한다 */
-  .ieg-fan.is-single:is(:hover, :focus-visible) .ieg-pg {
-    transform: translateY(-6px); border-color: var(--red);
-  }
-  .ieg-card:hover { z-index: 5; }
-
   /* ── 언론 보도: 목록 행 ── */
   .ieg-row {
     display: flex; align-items: flex-start;
@@ -133,9 +98,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     html, body { scroll-behavior: auto; }
-    .ieg-pg, .ieg-thumb img { transition: none; }
-    .ieg-fan:hover .ieg-pg:nth-child(1), .ieg-fan:hover .ieg-pg:nth-child(2),
-    .ieg-fan:hover .ieg-pg:nth-child(3), .ieg-fan:hover .ieg-pg:nth-child(4) { transform: none; }
+    .ieg-sheet, .ieg-thumb img { transition: none; }
+    .ieg-sheet:hover { transform: none; }
   }
 </style>
 </helmet>
@@ -177,33 +141,29 @@
     </header>
 
     <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
-    <section style="padding:clamp(30px,4vw,48px) 0 clamp(36px,4.5vw,60px)">
-      <!-- 호(월)마다 카드 하나. 최신 호가 앞으로 온다. -->
-      <div class="ieg-issues">
-        <sc-for list="{{ issues }}" as="g" hint-placeholder-count="2">
-          <article class="ieg-card">
-            <!-- 미리보기는 호마다 크기가 같고, 여러 면이면 커서를 올렸을 때 부챗살로 펼쳐진다.
-                 지면 한 장이 버튼 하나라 뒷장을 누르면 그 면이 열린다. -->
-            <div class="{{ g.fanClass }}">
-              <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="2">
-                <button class="ieg-pg" onClick="{{ p.open }}" aria-label="{{ p.alt }}">
-                  <img src="{{ p.src }}" alt="" loading="lazy">
-                </button>
-              </sc-for>
-            </div>
+    <section>
+      <!-- 호(월)마다 한 화면. 최신 호가 위로 오고 아래로 스크롤해 내려간다. -->
+      <sc-for list="{{ issues }}" as="g" hint-placeholder-count="2">
+        <article class="ieg-screen">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+            <span class="ieg-chip">{{ g.issue }}</span>
+            <span class="ieg-meta">{{ g.count }}</span>
+          </div>
 
-            <div style="display:flex;flex-direction:column;gap:7px">
-              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
-                <span class="ieg-chip">{{ g.issue }}</span>
-                <span class="ieg-meta">{{ g.count }}</span>
-              </div>
-              <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-                <p style="margin:0;font-size:13px;font-weight:700;line-height:1.55;letter-spacing:-0.01em;color:rgba(51,51,51,0.75)">{{ g.caption }}</p>
-              </sc-if>
-            </div>
-          </article>
-        </sc-for>
-      </div>
+          <!-- 지면 한 장이 버튼 하나라, 누른 면이 그대로 확대 보기에 뜬다. -->
+          <div class="ieg-pages">
+            <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="2">
+              <button class="ieg-sheet" onClick="{{ p.open }}" aria-label="{{ p.alt }}">
+                <img src="{{ p.src }}" alt="" loading="lazy">
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;text-align:center;font-size:13px;font-weight:700;line-height:1.55;letter-spacing:-0.01em;color:rgba(51,51,51,0.7)">{{ g.caption }}</p>
+          </sc-if>
+        </article>
+      </sc-for>
     </section>
     </sc-if>
 
@@ -459,13 +419,11 @@ class Component extends DCLogic {
       const n = g.pages.length;
       return {
         issue: g.issue,
-        // 펼쳐지는 건 앞 4장까지. 그 이상은 어차피 겹쳐 보이지 않는다.
-        previews: g.pages.slice(0, 4).map((p, pi) => ({
+        previews: g.pages.map((p, pi) => ({
           src: p.src,
           alt: g.issue + ' ' + (pi + 1) + '면 크게 보기',
           open: () => this.setState({ modalIndex: FLAT.findIndex(f => f.gi === gi && f.pi === pi) })
         })),
-        fanClass: n > 1 ? 'ieg-fan n' + Math.min(n, 4) : 'ieg-fan is-single',
         count: n + '면',
         caption: g.pages.map(p => p.cap).join(' / ')
       };

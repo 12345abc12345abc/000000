@@ -13,13 +13,94 @@
 <title>IEG NEWS</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-  html, body { margin: 0; padding: 0; background: #FAF7F0; scroll-behavior: smooth; }
-  body { font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; -webkit-font-smoothing: antialiased; color: #333333; }
+  :root {
+    --ink: #333333;        /* 무채색 본문 */
+    --red: #FF0000;        /* 대표색 */
+    --amber: #FFB300;      /* 보조색 */
+    --paper: #FAF7F0;      /* 바탕 */
+    --sheet: #FFFDF8;      /* 지면 */
+    --line: rgba(51,51,51,0.2);
+    --line-soft: rgba(51,51,51,0.12);
+    --muted: rgba(51,51,51,0.55);
+    --ease: cubic-bezier(.2,.8,.2,1);
+  }
+  html, body { margin: 0; padding: 0; background: var(--paper); scroll-behavior: smooth; }
+  body { font-family: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); }
   * { font-family: inherit; }
-  a { color: #333333; text-decoration: none; }
-  a:hover { color: #FF0000; }
-  ::selection { background: #FFB300; color: #333333; }
+  a { color: var(--ink); text-decoration: none; }
+  a:hover { color: var(--red); }
+  ::selection { background: var(--amber); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
   @keyframes iegIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* ── 소식지: 호 카드 그리드 ── */
+  .ieg-issues {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: clamp(28px, 4vw, 52px) clamp(24px, 3.5vw, 44px);
+  }
+  .ieg-card { position: relative; display: flex; flex-direction: column; gap: 14px; }
+
+  /* 미리보기 상자. 호마다 면 수가 달라도 크기는 항상 같다. */
+  .ieg-fan {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    cursor: zoom-in;
+    background: none;
+    border: 0;
+    padding: 0;
+    width: 100%;
+    display: block;
+  }
+  .ieg-pg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    background: var(--sheet);
+    border: 1px solid rgba(51,51,51,0.22);
+    transform-origin: 50% 100%;
+    transition: transform .45s var(--ease), box-shadow .35s var(--ease);
+    box-shadow: 0 2px 10px rgba(51,51,51,0.10);
+  }
+  /* 쌓인 상태 — 뒤로 갈수록 조금씩 밀리고 기운다 */
+  .ieg-pg:nth-child(1) { z-index: 4; }
+  .ieg-pg:nth-child(2) { z-index: 3; transform: translate(4%, 2%) rotate(2.5deg); }
+  .ieg-pg:nth-child(3) { z-index: 2; transform: translate(8%, 4%) rotate(5deg); }
+  .ieg-pg:nth-child(4) { z-index: 1; transform: translate(12%, 6%) rotate(7.5deg); }
+
+  /* 펼친 상태 — 커서를 올리면 카드처럼 부챗살로 벌어진다 */
+  .ieg-fan:hover .ieg-pg, .ieg-fan:focus-visible .ieg-pg { box-shadow: 0 14px 30px rgba(51,51,51,0.20); }
+  .ieg-fan:hover .ieg-pg:nth-child(1), .ieg-fan:focus-visible .ieg-pg:nth-child(1) { transform: translate(-13%, -3%) rotate(-8deg); }
+  .ieg-fan:hover .ieg-pg:nth-child(2), .ieg-fan:focus-visible .ieg-pg:nth-child(2) { transform: translate(9%, -5%) rotate(7deg); }
+  .ieg-fan:hover .ieg-pg:nth-child(3), .ieg-fan:focus-visible .ieg-pg:nth-child(3) { transform: translate(26%, 0%) rotate(15deg); }
+  .ieg-fan:hover .ieg-pg:nth-child(4), .ieg-fan:focus-visible .ieg-pg:nth-child(4) { transform: translate(40%, 6%) rotate(22deg); }
+  /* 한 장짜리 호는 펼칠 게 없으니 살짝 떠오르기만 한다 */
+  .ieg-fan.is-single:hover .ieg-pg, .ieg-fan.is-single:focus-visible .ieg-pg {
+    transform: translateY(-6px); border-color: var(--red);
+  }
+  .ieg-card:hover { z-index: 5; }
+
+  /* ── 언론 보도: 목록 행 ── */
+  .ieg-row {
+    display: flex; align-items: flex-start;
+    gap: clamp(12px, 2vw, 20px);
+    padding: clamp(16px, 2.2vw, 22px) clamp(8px, 1.2vw, 14px);
+    margin: 0 clamp(-8px, -1.2vw, -14px);
+    border-top: 1px solid var(--line);
+    transition: background .18s var(--ease), border-color .18s var(--ease);
+  }
+  .ieg-row:hover { background: rgba(255,255,255,0.55); border-top-color: var(--red); }
+  .ieg-thumb { flex: 0 0 auto; display: block; overflow: hidden; background: #EFE9DE; border: 1px solid var(--line-soft); }
+  .ieg-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .35s var(--ease); }
+  .ieg-row:hover .ieg-thumb img { transform: scale(1.06); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html, body { scroll-behavior: auto; }
+    .ieg-pg, .ieg-thumb img { transition: none; }
+    .ieg-fan:hover .ieg-pg:nth-child(1), .ieg-fan:hover .ieg-pg:nth-child(2),
+    .ieg-fan:hover .ieg-pg:nth-child(3), .ieg-fan:hover .ieg-pg:nth-child(4) { transform: none; }
+  }
 </style>
 </helmet>
 <div style="min-height:100vh;background:#FAF7F0;padding:0 clamp(20px,5vw,64px) 0">
@@ -29,12 +110,13 @@
   <div style="max-width:1160px;margin:0 auto">
 
     <header style="padding:clamp(28px,4vw,48px) 0 0">
-      <div style="border-top:7px solid #333333"></div>
-      <div style="padding:clamp(20px,3vw,32px) 0">
-        <h1 style="margin:0;font-size:clamp(34px,6vw,52px);font-weight:900;letter-spacing:-0.03em;line-height:1">IEG<span style="color:#FF0000"> NEWS</span></h1>
+      <div style="border-top:7px solid var(--ink)"></div>
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;padding:clamp(20px,3vw,32px) 0">
+        <h1 style="margin:0;font-size:clamp(34px,6vw,52px);font-weight:900;letter-spacing:-0.035em;line-height:0.95">IEG<span style="color:var(--red)"> NEWS</span></h1>
+        <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:0.16em;color:rgba(51,51,51,0.45)">주식회사 아이지 · TECH-EDU</p>
       </div>
-      <div style="border-top:3px solid #333333"></div>
-      <div style="border-top:1px solid #333333;margin-top:4px"></div>
+      <div style="border-top:3px solid var(--ink)"></div>
+      <div style="border-top:1px solid var(--ink);margin-top:4px"></div>
       <nav style="padding:clamp(14px,2vw,18px) 0;border-bottom:1px solid rgba(51,51,51,0.2)">
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-width:340px">
         <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
@@ -55,57 +137,28 @@
     </header>
 
     <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
-    <section style="padding:clamp(28px,3.4vw,44px) 0 clamp(32px,4vw,52px)">
-      <div style="max-width:940px;margin:0 auto">
-        <!-- 호(월)마다 블록 하나. 최신 호가 위로 온다. -->
+    <section style="padding:clamp(30px,4vw,48px) 0 clamp(36px,4.5vw,60px)">
+      <!-- 호(월)마다 카드 하나. 최신 호가 앞으로 온다. -->
+      <div class="ieg-issues">
         <sc-for list="{{ issues }}" as="g" hint-placeholder-count="2">
-          <div style="padding-bottom:clamp(30px,4vw,48px)">
-            <sc-if value="{{ !g.first }}" hint-placeholder-val="{{ false }}">
-              <div style="border-top:1px solid rgba(51,51,51,0.2);margin-bottom:clamp(26px,3.4vw,40px)"></div>
-            </sc-if>
+          <article class="ieg-card">
+            <!-- 미리보기는 호마다 크기가 같고, 여러 면이면 커서를 올렸을 때 부챗살로 펼쳐진다. -->
+            <button class="{{ g.fanClass }}" onClick="{{ g.open }}" aria-label="{{ g.alt }}">
+              <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="2">
+                <img class="ieg-pg" src="{{ p.src }}" alt="" loading="lazy">
+              </sc-for>
+            </button>
 
-            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(16px,2.2vw,22px)">
-              <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">{{ g.issue }}</span>
-              <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
-                <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ g.label }}</span>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+                <span style="display:inline-block;padding:4px 9px;background:var(--red);color:#FFFFFF;font-size:11px;font-weight:800;letter-spacing:0.06em">{{ g.issue }}</span>
+                <span style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:var(--muted)">{{ g.count }}</span>
+              </div>
+              <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+                <p style="margin:0;font-size:13px;font-weight:700;line-height:1.55;letter-spacing:-0.01em;color:rgba(51,51,51,0.75)">{{ g.caption }}</p>
               </sc-if>
             </div>
-
-            <figure style="margin:0;display:flex;flex-direction:column;gap:14px">
-              <!-- 화살표는 지면 양옆 바깥에 두어 지면을 가리지 않는다. -->
-              <div style="display:flex;align-items:center;gap:clamp(6px,1.4vw,16px)">
-                <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
-                  <button onClick="{{ g.prev }}" aria-label="이전 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
-                </sc-if>
-                <!-- 면이 하나뿐인 호도 화살표 자리를 비워둬 지면 폭을 다른 호와 맞춘다. -->
-                <sc-if value="{{ !g.multi }}" hint-placeholder-val="{{ false }}">
-                  <div aria-hidden="true" style="flex:0 0 auto;width:clamp(30px,4vw,44px)"></div>
-                </sc-if>
-
-                <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
-                <div style="flex:1 1 auto;min-width:0;position:relative;box-sizing:border-box;padding:0 30px 30px 0">
-                  <sc-for list="{{ g.stackLayers }}" as="L" hint-placeholder-count="1">
-                    <div aria-hidden="true" style="position:absolute;top:0;left:0;right:30px;bottom:30px;transform:{{ L.shift }};background:{{ L.shade }};border:1px solid rgba(51,51,51,0.22);box-shadow:{{ L.shadow }}"></div>
-                  </sc-for>
-
-                  <div onClick="{{ g.open }}" style="position:relative;z-index:1;overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.22);box-shadow:0 4px 14px rgba(51,51,51,0.10);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.18)">
-                    <img src="{{ g.image }}" alt="{{ g.alt }}" style="display:block;width:100%;height:auto">
-                  </div>
-                </div>
-
-                <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
-                  <button onClick="{{ g.next }}" aria-label="다음 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
-                </sc-if>
-                <sc-if value="{{ !g.multi }}" hint-placeholder-val="{{ false }}">
-                  <div aria-hidden="true" style="flex:0 0 auto;width:clamp(30px,4vw,44px)"></div>
-                </sc-if>
-              </div>
-
-              <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-                <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">{{ g.caption }}</figcaption>
-              </sc-if>
-            </figure>
-          </div>
+          </article>
         </sc-for>
       </div>
     </section>
@@ -117,21 +170,21 @@
       <p style="margin:0 0 clamp(14px,2vw,20px);font-size:13px;font-weight:600;line-height:1.6;color:rgba(51,51,51,0.5)">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
 
       <sc-for list="{{ items }}" as="item" hint-placeholder-count="12">
-        <div style="display:flex;align-items:flex-start;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.2vw,22px) 0;border-top:1px solid rgba(51,51,51,0.2);transition:border-color .15s" style-hover="border-top-color:#FF0000">
+        <div class="ieg-row">
           <sc-if value="{{ item.img }}" hint-placeholder-val="{{ true }}">
-            <a href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true" style="flex:0 0 auto;display:block;width:clamp(88px,11vw,132px);height:clamp(62px,7.6vw,92px);overflow:hidden;background:#EFE9DE;border:1px solid rgba(51,51,51,0.14)">
-              <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer" style="display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s" style-hover="transform:scale(1.05)">
+            <a class="ieg-thumb" href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true" style="width:clamp(88px,11vw,132px);height:clamp(62px,7.6vw,92px)">
+              <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer">
             </a>
           </sc-if>
           <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
               <span style="font-size:12px;font-weight:800;letter-spacing:0.04em;color:rgba(51,51,51,0.45)">{{ item.date }}</span>
-              <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#FF0000">{{ item.media }}</span>
+              <span style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:var(--red)">{{ item.media }}</span>
               <sc-if value="{{ item.note }}" hint-placeholder-val="{{ false }}">
-                <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;color:rgba(51,51,51,0.5);border:1px solid rgba(51,51,51,0.22);padding:1px 5px">{{ item.note }}</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;color:var(--muted);border:1px solid rgba(51,51,51,0.22);padding:1px 5px">{{ item.note }}</span>
               </sc-if>
             </div>
-            <a href="{{ item.url }}" target="_blank" rel="noopener" style="font-size:clamp(16px,1.9vw,19px);font-weight:700;line-height:1.45;text-wrap:pretty;transition:color .15s">{{ item.title }}</a>
+            <a href="{{ item.url }}" target="_blank" rel="noopener" style="font-size:clamp(16px,1.9vw,19px);font-weight:700;line-height:1.45;letter-spacing:-0.015em;text-wrap:pretty;transition:color .15s">{{ item.title }}</a>
           </div>
         </div>
       </sc-for>
@@ -292,22 +345,6 @@ ISSUES.forEach((g, gi) => g.pages.forEach((p, pi) => {
 
 const pad2 = (n) => (n < 10 ? '0' + n : String(n));
 
-// 남은 면 수만큼(최대 2겹) 뒷장을 깔아 쌓인 느낌을 낸다. 깊은 층을 먼저 그려 뒤로 보낸다.
-// 1겹뿐일 때는 더 크게 밀어서 여러 장이라는 게 확실히 보이게 한다.
-function stackFor(count) {
-  const depth = Math.min(Math.max(count - 1, 0), 2);
-  const layers = [];
-  for (let i = depth; i >= 1; i--) {
-    const step = depth === 1 ? 20 : i * 15;
-    layers.push({
-      shift: 'translate(' + step + 'px,' + step + 'px) rotate(' + (i * 1.2) + 'deg)',
-      shade: i === 1 ? '#F1EADD' : '#E5DDCC',
-      shadow: '0 ' + (4 + i * 4) + 'px ' + (14 + i * 8) + 'px rgba(51,51,51,0.13)'
-    });
-  }
-  return layers;
-}
-
 const PER_PAGE = 10;
 
 const rankOf = (media) => { const i = RANK.indexOf(media); return i === -1 ? RANK.length : i; };
@@ -325,9 +362,7 @@ const PAGE_COUNT = Math.max(1, Math.ceil(SORTED.length / PER_PAGE));
 
 class Component extends DCLogic {
   state = {
-    // sheets[i] = i번째 호에서 현재 보고 있는 면
-    tab: 'newsletter', page: 1, sheets: ISSUES.map(() => 0),
-    modalIndex: null, progress: 0, showTop: false
+    tab: 'newsletter', page: 1, modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
@@ -353,15 +388,8 @@ class Component extends DCLogic {
     window.removeEventListener('scroll', this._onScroll);
   }
 
-  // 확대 보기에서 넘긴 면을 닫은 뒤에도 해당 호에 그대로 반영한다.
   closeModal() {
-    this.setState(st => {
-      if (st.modalIndex === null) return { modalIndex: null };
-      const f = FLAT[st.modalIndex];
-      const arr = (st.sheets || ISSUES.map(() => 0)).slice();
-      arr[f.gi] = f.pi;
-      return { modalIndex: null, sheets: arr };
-    });
+    this.setState({ modalIndex: null });
   }
 
   step(dir) {
@@ -387,30 +415,17 @@ class Component extends DCLogic {
       select: () => goTo(i + 1)
     }));
 
-    // 호마다 보고 있는 면을 따로 기억한다.
-    const sheetAt = (gi) => Math.min(Math.max(0, (s.sheets || [])[gi] || 0), ISSUES[gi].pages.length - 1);
-    const goSheet = (gi, next) => this.setState(st => {
-      const arr = (st.sheets || ISSUES.map(() => 0)).slice();
-      arr[gi] = next;
-      return { sheets: arr };
-    });
-
     const issues = ISSUES.map((g, gi) => {
       const n = g.pages.length;
-      const pi = sheetAt(gi);
       return {
         issue: g.issue,
-        first: gi === 0,
-        multi: n > 1,
-        image: g.pages[pi].src,
-        caption: g.pages[pi].cap,
-        alt: 'IEG 소식지 ' + g.issue + ' ' + (pi + 1) + '면',
-        label: pad2(pi + 1) + ' / ' + pad2(n),
-        stackLayers: stackFor(n),
-        // 양끝에서 순환한다. 화살표가 사라지지 않아 버튼 위치가 흔들리지 않는다.
-        prev: () => goSheet(gi, (pi - 1 + n) % n),
-        next: () => goSheet(gi, (pi + 1) % n),
-        open: () => this.setState({ modalIndex: FLAT.findIndex(f => f.gi === gi && f.pi === pi) })
+        // 펼쳐지는 건 앞 4장까지. 그 이상은 어차피 겹쳐 보이지 않는다.
+        previews: g.pages.slice(0, 4).map(p => ({ src: p.src })),
+        fanClass: n > 1 ? 'ieg-fan' : 'ieg-fan is-single',
+        count: n > 1 ? pad2(n) + '면' : '1면',
+        caption: g.pages[0].cap,
+        alt: 'IEG 소식지 ' + g.issue + ' 펼쳐 보기',
+        open: () => this.setState({ modalIndex: FLAT.findIndex(f => f.gi === gi) })
       };
     });
 

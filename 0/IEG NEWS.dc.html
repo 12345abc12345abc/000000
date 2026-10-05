@@ -58,7 +58,7 @@
     <section style="padding:clamp(28px,3.4vw,44px) 0 clamp(32px,4vw,52px)">
       <div style="max-width:940px;margin:0 auto">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(16px,2.2vw,22px)">
-          <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">2026. 08</span>
+          <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">{{ sheetIssue }}</span>
           <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
             <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ sheetLabel }}</span>
           </sc-if>
@@ -254,11 +254,12 @@ const ARTICLES = [
   { m:'여기에뉴스', d:'2014-02-03', t:'인력양성의 첨병으로 나선 (주)아이지 “로봇기술 배우러 오셨어요?”', u:'https://yeogienews.com/entry/46364', img:'https://file.yeogie.com/img.news/20142/UAZ2I70I1L.png' }
 ];
 
-// 소식지 지면. 한 번에 한 면씩 보여주고 번호로 넘긴다.
-const PAGES = ['uploads/1.png', 'uploads/2.png'];
-const PAGE_CAPTIONS = [
-  'PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분',
-  'PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회'
+// 소식지 지면. 한 번에 한 면씩 보여주고 화살표로 넘긴다.
+// 최신 호가 위(배열 앞)로 오고, 한 호 안에서는 면 순서대로 둔다.
+const SHEETS = [
+  { src: 'uploads/3.png', issue: '2026. 09', cap: 'PAGE 01 · 특수분야 연수기관 지정 / IEGLAB.COM 공식 오픈' },
+  { src: 'uploads/1.png', issue: '2026. 08', cap: 'PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분' },
+  { src: 'uploads/2.png', issue: '2026. 08', cap: 'PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회' }
 ];
 const pad2 = (n) => (n < 10 ? '0' + n : String(n));
 
@@ -306,7 +307,7 @@ class Component extends DCLogic {
   }
 
   step(dir) {
-    this.setState(s => ({ modalIndex: (s.modalIndex + dir + PAGES.length) % PAGES.length }));
+    this.setState(s => ({ modalIndex: (s.modalIndex + dir + SHEETS.length) % SHEETS.length }));
   }
 
   renderVals() {
@@ -328,11 +329,11 @@ class Component extends DCLogic {
       select: () => goTo(i + 1)
     }));
 
-    const sheet = Math.min(Math.max(0, s.sheet), PAGES.length - 1);
+    const sheet = Math.min(Math.max(0, s.sheet), SHEETS.length - 1);
 
     // 실제 면 수만큼(최대 2겹) 뒷장을 깔아 쌓인 느낌을 낸다. 깊은 층을 먼저 그려 뒤로 보낸다.
     // 1겹뿐일 때는 더 크게 밀어서 여러 장이라는 게 확실히 보이게 한다.
-    const depth = Math.min(Math.max(PAGES.length - 1, 0), 2);
+    const depth = Math.min(Math.max(SHEETS.length - 1, 0), 2);
     const stackLayers = [];
     for (let i = depth; i >= 1; i--) {
       const step = depth === 1 ? 20 : i * 15;
@@ -344,15 +345,16 @@ class Component extends DCLogic {
     }
 
     return {
-      multiSheet: PAGES.length > 1,
+      multiSheet: SHEETS.length > 1,
       stackLayers,
-      sheetImage: PAGES[sheet],
-      sheetAlt: 'IEG 소식지 ' + (sheet + 1) + '면',
-      sheetCaption: PAGE_CAPTIONS[sheet] || '',
-      sheetLabel: 'PAGE ' + pad2(sheet + 1) + ' / ' + pad2(PAGES.length),
+      sheetImage: SHEETS[sheet].src,
+      sheetIssue: SHEETS[sheet].issue,
+      sheetAlt: 'IEG 소식지 ' + SHEETS[sheet].issue,
+      sheetCaption: SHEETS[sheet].cap,
+      sheetLabel: pad2(sheet + 1) + ' / ' + pad2(SHEETS.length),
       // 양끝에서 순환한다. 화살표가 사라지지 않아 버튼 위치가 흔들리지 않는다.
-      prevSheet: () => this.setState({ sheet: (sheet - 1 + PAGES.length) % PAGES.length }),
-      nextSheet: () => this.setState({ sheet: (sheet + 1) % PAGES.length }),
+      prevSheet: () => this.setState({ sheet: (sheet - 1 + SHEETS.length) % SHEETS.length }),
+      nextSheet: () => this.setState({ sheet: (sheet + 1) % SHEETS.length }),
       openSheet: () => this.setState({ modalIndex: sheet }),
       items: slice.map(a => ({
         date: dateLabel(a.d), media: a.m, title: a.t, url: a.u,
@@ -372,11 +374,13 @@ class Component extends DCLogic {
       showTop: s.showTop,
       scrollTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
       modalOpen: s.modalIndex !== null,
-      pageLabel: s.modalIndex !== null ? 'PAGE 0' + (s.modalIndex + 1) + ' / 0' + PAGES.length : '',
+      pageLabel: s.modalIndex !== null
+        ? SHEETS[s.modalIndex].issue + ' · ' + pad2(s.modalIndex + 1) + ' / ' + pad2(SHEETS.length)
+        : '',
       modalImage: s.modalIndex !== null
         ? React.createElement('img', {
-            src: PAGES[s.modalIndex],
-            alt: 'IEG 소식지 확대 보기',
+            src: SHEETS[s.modalIndex].src,
+            alt: 'IEG 소식지 ' + SHEETS[s.modalIndex].issue + ' 확대 보기',
             style: { maxWidth: 'min(920px,88vw)', maxHeight: '88vh', width: 'auto', height: 'auto', objectFit: 'contain', background: '#FFFDF8', boxShadow: '0 24px 60px rgba(0,0,0,0.45)' }
           })
         : null,

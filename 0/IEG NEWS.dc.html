@@ -57,46 +57,57 @@
     <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
     <section style="padding:clamp(28px,3.4vw,44px) 0 clamp(32px,4vw,52px)">
       <div style="max-width:940px;margin:0 auto">
-        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(16px,2.2vw,22px)">
-          <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">{{ sheetIssue }}</span>
-          <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
-            <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ sheetLabel }}</span>
-          </sc-if>
-        </div>
-
-        <figure style="margin:0;display:flex;flex-direction:column;gap:14px">
-          <!-- 화살표는 지면 양옆 바깥에 두어 지면을 가리지 않는다. -->
-          <div style="display:flex;align-items:center;gap:clamp(6px,1.4vw,16px)">
-            <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
-              <button onClick="{{ prevSheet }}" aria-label="이전 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
+        <!-- 호(월)마다 블록 하나. 최신 호가 위로 온다. -->
+        <sc-for list="{{ issues }}" as="g" hint-placeholder-count="2">
+          <div style="padding-bottom:clamp(30px,4vw,48px)">
+            <sc-if value="{{ !g.first }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid rgba(51,51,51,0.2);margin-bottom:clamp(26px,3.4vw,40px)"></div>
             </sc-if>
 
-            <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
-            <div style="flex:1 1 auto;min-width:0;position:relative;box-sizing:border-box;padding:0 30px 30px 0">
-              <sc-for list="{{ stackLayers }}" as="L" hint-placeholder-count="1">
-                <div aria-hidden="true" style="position:absolute;top:0;left:0;right:30px;bottom:30px;transform:{{ L.shift }};background:{{ L.shade }};border:1px solid rgba(51,51,51,0.22);box-shadow:{{ L.shadow }}"></div>
-              </sc-for>
-
-              <div onClick="{{ openSheet }}" style="position:relative;z-index:1;overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.22);box-shadow:0 4px 14px rgba(51,51,51,0.10);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.18)">
-                <img src="{{ sheetImage }}" alt="{{ sheetAlt }}" style="display:block;width:100%;height:auto">
-              </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:clamp(16px,2.2vw,22px)">
+              <span style="display:inline-block;padding:5px 10px;background:#FF0000;color:#FFFFFF;font-size:12px;font-weight:800;letter-spacing:0.04em">{{ g.issue }}</span>
+              <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:12px;font-weight:800;letter-spacing:0.1em;color:rgba(51,51,51,0.5)">{{ g.label }}</span>
+              </sc-if>
             </div>
 
-            <sc-if value="{{ multiSheet }}" hint-placeholder-val="{{ true }}">
-              <button onClick="{{ nextSheet }}" aria-label="다음 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
-            </sc-if>
-          </div>
+            <figure style="margin:0;display:flex;flex-direction:column;gap:14px">
+              <!-- 화살표는 지면 양옆 바깥에 두어 지면을 가리지 않는다. -->
+              <div style="display:flex;align-items:center;gap:clamp(6px,1.4vw,16px)">
+                <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ g.prev }}" aria-label="이전 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">‹</button>
+                </sc-if>
 
-          <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
-            <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">{{ sheetCaption }}</figcaption>
-          </sc-if>
-        </figure>
+                <!-- 뒷장 자리를 padding으로 비워두고, 그 위로 뒷장을 밀어 넣는다. -->
+                <div style="flex:1 1 auto;min-width:0;position:relative;box-sizing:border-box;padding:0 30px 30px 0">
+                  <sc-for list="{{ g.stackLayers }}" as="L" hint-placeholder-count="1">
+                    <div aria-hidden="true" style="position:absolute;top:0;left:0;right:30px;bottom:30px;transform:{{ L.shift }};background:{{ L.shade }};border:1px solid rgba(51,51,51,0.22);box-shadow:{{ L.shadow }}"></div>
+                  </sc-for>
+
+                  <div onClick="{{ g.open }}" style="position:relative;z-index:1;overflow:hidden;cursor:zoom-in;background:#FFFDF8;border:1px solid rgba(51,51,51,0.22);box-shadow:0 4px 14px rgba(51,51,51,0.10);transition:border-color .15s,box-shadow .2s" style-hover="border-color:#FF0000;box-shadow:0 14px 34px rgba(51,51,51,0.18)">
+                    <img src="{{ g.image }}" alt="{{ g.alt }}" style="display:block;width:100%;height:auto">
+                  </div>
+                </div>
+
+                <sc-if value="{{ g.multi }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ g.next }}" aria-label="다음 면" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:clamp(30px,4vw,44px);height:clamp(54px,7vw,72px);appearance:none;padding:0;border:1px solid rgba(51,51,51,0.28);background:transparent;color:rgba(51,51,51,0.7);font-size:clamp(18px,2.4vw,22px);font-weight:800;line-height:1;cursor:pointer;transition:background .15s,color .15s,border-color .15s" style-hover="background:#FF0000;color:#FFFFFF;border-color:#FF0000">›</button>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ showCaptions }}" hint-placeholder-val="{{ true }}">
+                <figcaption style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:rgba(51,51,51,0.55)">{{ g.caption }}</figcaption>
+              </sc-if>
+            </figure>
+          </div>
+        </sc-for>
       </div>
     </section>
     </sc-if>
 
     <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
     <section style="padding:clamp(24px,3vw,36px) 0 0">
+
+      <p style="margin:0 0 clamp(14px,2vw,20px);font-size:13px;font-weight:600;line-height:1.6;color:rgba(51,51,51,0.5)">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
 
       <sc-for list="{{ items }}" as="item" hint-placeholder-count="12">
         <div style="display:flex;align-items:flex-start;gap:clamp(12px,2vw,18px);padding:clamp(16px,2.2vw,22px) 0;border-top:1px solid rgba(51,51,51,0.2);transition:border-color .15s" style-hover="border-top-color:#FF0000">
@@ -254,14 +265,41 @@ const ARTICLES = [
   { m:'여기에뉴스', d:'2014-02-03', t:'인력양성의 첨병으로 나선 (주)아이지 “로봇기술 배우러 오셨어요?”', u:'https://yeogienews.com/entry/46364', img:'https://file.yeogie.com/img.news/20142/UAZ2I70I1L.png' }
 ];
 
-// 소식지 지면. 한 번에 한 면씩 보여주고 화살표로 넘긴다.
-// 최신 호가 위(배열 앞)로 오고, 한 호 안에서는 면 순서대로 둔다.
-const SHEETS = [
-  { src: 'uploads/3.png', issue: '2026. 09', cap: 'PAGE 01 · 특수분야 연수기관 지정 / IEGLAB.COM 공식 오픈' },
-  { src: 'uploads/1.png', issue: '2026. 08', cap: 'PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분' },
-  { src: 'uploads/2.png', issue: '2026. 08', cap: 'PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회' }
+// 소식지. 호(월)마다 블록 하나이고, 최신 호가 배열 앞(위)으로 온다.
+// 한 호 안에서는 면 순서대로 두고, 한 번에 한 면씩 보여주며 화살표로 넘긴다.
+const ISSUES = [
+  { issue: '2026. 09', pages: [
+    { src: 'uploads/3.png', cap: 'PAGE 01 · 특수분야 연수기관 지정 / IEGLAB.COM 공식 오픈' }
+  ] },
+  { issue: '2026. 08', pages: [
+    { src: 'uploads/1.png', cap: 'PAGE 01 · 포브스 코리아 에듀테크 30 / KBS 추적 60분' },
+    { src: 'uploads/2.png', cap: 'PAGE 02 · 성남시청 연계 견학 / 전남광주미래산업박람회' }
+  ] }
 ];
+
+// 확대 보기는 호 구분 없이 전체 면을 차례로 넘긴다.
+const FLAT = [];
+ISSUES.forEach((g, gi) => g.pages.forEach((p, pi) => {
+  FLAT.push({ src: p.src, cap: p.cap, issue: g.issue, gi: gi, pi: pi });
+}));
+
 const pad2 = (n) => (n < 10 ? '0' + n : String(n));
+
+// 남은 면 수만큼(최대 2겹) 뒷장을 깔아 쌓인 느낌을 낸다. 깊은 층을 먼저 그려 뒤로 보낸다.
+// 1겹뿐일 때는 더 크게 밀어서 여러 장이라는 게 확실히 보이게 한다.
+function stackFor(count) {
+  const depth = Math.min(Math.max(count - 1, 0), 2);
+  const layers = [];
+  for (let i = depth; i >= 1; i--) {
+    const step = depth === 1 ? 20 : i * 15;
+    layers.push({
+      shift: 'translate(' + step + 'px,' + step + 'px) rotate(' + (i * 1.2) + 'deg)',
+      shade: i === 1 ? '#F1EADD' : '#E5DDCC',
+      shadow: '0 ' + (4 + i * 4) + 'px ' + (14 + i * 8) + 'px rgba(51,51,51,0.13)'
+    });
+  }
+  return layers;
+}
 
 const PER_PAGE = 10;
 
@@ -280,13 +318,15 @@ const PAGE_COUNT = Math.max(1, Math.ceil(SORTED.length / PER_PAGE));
 
 class Component extends DCLogic {
   state = {
-    tab: 'newsletter', page: 1, sheet: 0, modalIndex: null, progress: 0, showTop: false
+    // sheets[i] = i번째 호에서 현재 보고 있는 면
+    tab: 'newsletter', page: 1, sheets: ISSUES.map(() => 0),
+    modalIndex: null, progress: 0, showTop: false
   };
 
   componentDidMount() {
     this._onKey = (e) => {
       if (this.state.modalIndex !== null) {
-        if (e.key === 'Escape') this.setState(st => ({ modalIndex: null, sheet: st.modalIndex ?? st.sheet }));
+        if (e.key === 'Escape') this.closeModal();
         if (e.key === 'ArrowRight') this.step(1);
         if (e.key === 'ArrowLeft') this.step(-1);
       }
@@ -306,8 +346,19 @@ class Component extends DCLogic {
     window.removeEventListener('scroll', this._onScroll);
   }
 
+  // 확대 보기에서 넘긴 면을 닫은 뒤에도 해당 호에 그대로 반영한다.
+  closeModal() {
+    this.setState(st => {
+      if (st.modalIndex === null) return { modalIndex: null };
+      const f = FLAT[st.modalIndex];
+      const arr = (st.sheets || ISSUES.map(() => 0)).slice();
+      arr[f.gi] = f.pi;
+      return { modalIndex: null, sheets: arr };
+    });
+  }
+
   step(dir) {
-    this.setState(s => ({ modalIndex: (s.modalIndex + dir + SHEETS.length) % SHEETS.length }));
+    this.setState(s => ({ modalIndex: (s.modalIndex + dir + FLAT.length) % FLAT.length }));
   }
 
   renderVals() {
@@ -329,33 +380,35 @@ class Component extends DCLogic {
       select: () => goTo(i + 1)
     }));
 
-    const sheet = Math.min(Math.max(0, s.sheet), SHEETS.length - 1);
+    // 호마다 보고 있는 면을 따로 기억한다.
+    const sheetAt = (gi) => Math.min(Math.max(0, (s.sheets || [])[gi] || 0), ISSUES[gi].pages.length - 1);
+    const goSheet = (gi, next) => this.setState(st => {
+      const arr = (st.sheets || ISSUES.map(() => 0)).slice();
+      arr[gi] = next;
+      return { sheets: arr };
+    });
 
-    // 실제 면 수만큼(최대 2겹) 뒷장을 깔아 쌓인 느낌을 낸다. 깊은 층을 먼저 그려 뒤로 보낸다.
-    // 1겹뿐일 때는 더 크게 밀어서 여러 장이라는 게 확실히 보이게 한다.
-    const depth = Math.min(Math.max(SHEETS.length - 1, 0), 2);
-    const stackLayers = [];
-    for (let i = depth; i >= 1; i--) {
-      const step = depth === 1 ? 20 : i * 15;
-      stackLayers.push({
-        shift: 'translate(' + step + 'px,' + step + 'px) rotate(' + (i * 1.2) + 'deg)',
-        shade: i === 1 ? '#F1EADD' : '#E5DDCC',
-        shadow: '0 ' + (4 + i * 4) + 'px ' + (14 + i * 8) + 'px rgba(51,51,51,0.13)'
-      });
-    }
+    const issues = ISSUES.map((g, gi) => {
+      const n = g.pages.length;
+      const pi = sheetAt(gi);
+      return {
+        issue: g.issue,
+        first: gi === 0,
+        multi: n > 1,
+        image: g.pages[pi].src,
+        caption: g.pages[pi].cap,
+        alt: 'IEG 소식지 ' + g.issue + ' ' + (pi + 1) + '면',
+        label: pad2(pi + 1) + ' / ' + pad2(n),
+        stackLayers: stackFor(n),
+        // 양끝에서 순환한다. 화살표가 사라지지 않아 버튼 위치가 흔들리지 않는다.
+        prev: () => goSheet(gi, (pi - 1 + n) % n),
+        next: () => goSheet(gi, (pi + 1) % n),
+        open: () => this.setState({ modalIndex: FLAT.findIndex(f => f.gi === gi && f.pi === pi) })
+      };
+    });
 
     return {
-      multiSheet: SHEETS.length > 1,
-      stackLayers,
-      sheetImage: SHEETS[sheet].src,
-      sheetIssue: SHEETS[sheet].issue,
-      sheetAlt: 'IEG 소식지 ' + SHEETS[sheet].issue,
-      sheetCaption: SHEETS[sheet].cap,
-      sheetLabel: pad2(sheet + 1) + ' / ' + pad2(SHEETS.length),
-      // 양끝에서 순환한다. 화살표가 사라지지 않아 버튼 위치가 흔들리지 않는다.
-      prevSheet: () => this.setState({ sheet: (sheet - 1 + SHEETS.length) % SHEETS.length }),
-      nextSheet: () => this.setState({ sheet: (sheet + 1) % SHEETS.length }),
-      openSheet: () => this.setState({ modalIndex: sheet }),
+      issues,
       items: slice.map(a => ({
         date: dateLabel(a.d), media: a.m, title: a.t, url: a.u,
         note: a.note || '', img: a.img || ''
@@ -375,19 +428,19 @@ class Component extends DCLogic {
       scrollTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
       modalOpen: s.modalIndex !== null,
       pageLabel: s.modalIndex !== null
-        ? SHEETS[s.modalIndex].issue + ' · ' + pad2(s.modalIndex + 1) + ' / ' + pad2(SHEETS.length)
+        ? FLAT[s.modalIndex].issue + ' · PAGE ' + pad2(FLAT[s.modalIndex].pi + 1)
         : '',
       modalImage: s.modalIndex !== null
         ? React.createElement('img', {
-            src: SHEETS[s.modalIndex].src,
-            alt: 'IEG 소식지 ' + SHEETS[s.modalIndex].issue + ' 확대 보기',
+            src: FLAT[s.modalIndex].src,
+            alt: 'IEG 소식지 ' + FLAT[s.modalIndex].issue + ' 확대 보기',
             style: { maxWidth: 'min(920px,88vw)', maxHeight: '88vh', width: 'auto', height: 'auto', objectFit: 'contain', background: '#FFFDF8', boxShadow: '0 24px 60px rgba(0,0,0,0.45)' }
           })
         : null,
       prevPage: (e) => { e.stopPropagation(); this.step(-1); },
       nextPage: (e) => { e.stopPropagation(); this.step(1); },
       // 확대 보기에서 넘긴 면을 닫은 뒤에도 그대로 보여준다.
-      closeModal: () => this.setState(st => ({ modalIndex: null, sheet: st.modalIndex ?? st.sheet }))
+      closeModal: () => this.closeModal()
     };
   }
 }

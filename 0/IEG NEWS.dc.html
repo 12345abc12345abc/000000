@@ -29,10 +29,7 @@
     /* 탭을 바꿀 때 스크롤바가 생겼다 사라지며 화면이 좌우로 흔들리는 걸 막는다 */
     scrollbar-gutter: stable; overflow-y: scroll;
     scrollbar-width: thin; scrollbar-color: rgba(51,51,51,0.32) transparent;
-    /* 바탕 종이 + 신문 단 같은 세로 괘선 (고정) */
     background-color: var(--paper);
-    background-image: repeating-linear-gradient(90deg,
-      rgba(51,51,51,0.03) 0 1px, transparent 1px clamp(72px, 9vw, 116px));
   }
   body {
     margin: 0; padding: 0; background: transparent;
@@ -45,91 +42,27 @@
   ::selection { background: var(--amber); color: var(--ink); }
   :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 
-  /* ── 배경: 신문 인쇄의 망점(하프톤) 위로 색이 번지고, 커서를 따라 빛이 비춘다 ── */
-  /* 커서 위치. 등록해 두면 값이 부드럽게 따라온다. */
-  @property --mx { syntax: '<length>'; inherits: true; initial-value: 720px; }
-  @property --my { syntax: '<length>'; inherits: true; initial-value: 360px; }
-
+  /* ── 배경: 가는 물결선이 여백에서 천천히 흐른다 ── */
   .ieg-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-    transition: --mx .45s var(--ease), --my .45s var(--ease);
-    /* 본문 칼럼(최대 1160px) 바깥 여백의 폭. 망점은 이 여백 안에만 깔려 글자 뒤로 비치지 않는다. */
+    /* 본문 칼럼(최대 1160px) 바깥 여백의 폭 */
     --gut: max(clamp(20px, 5vw, 64px), calc((100vw - 1160px) / 2));
+    /* 읽는 칼럼 쪽은 거의 지워서 선이 기사 제목을 지나가지 않게 한다 */
+    -webkit-mask-image: linear-gradient(90deg, #000 0, rgba(0,0,0,0.12) calc(var(--gut) + 2vw),
+      rgba(0,0,0,0.12) calc(100% - var(--gut) - 2vw), #000 100%);
+    mask-image: linear-gradient(90deg, #000 0, rgba(0,0,0,0.12) calc(var(--gut) + 2vw),
+      rgba(0,0,0,0.12) calc(100% - var(--gut) - 2vw), #000 100%);
   }
-  .ieg-bg > i { position: absolute; inset: 0; display: block; }
-
-  /* 1) 브랜드 색 번짐 — 아주 천천히 흐른다 */
-  .ieg-bg-glow {
-    inset: -25% !important;
-    background:
-      radial-gradient(42vw 42vw at 14% 10%, rgba(255,0,0,0.11), transparent 62%),
-      radial-gradient(38vw 38vw at 88% 20%, rgba(255,179,0,0.16), transparent 64%),
-      radial-gradient(48vw 48vw at 62% 94%, rgba(51,51,51,0.08), transparent 62%);
-    animation: iegDrift 34s ease-in-out infinite alternate;
-    will-change: transform;
+  .ieg-flow { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* 선마다 속도가 달라 겹쳐 흐른다. 각 선은 4주기 길이로 그려 두고 정확히 한 주기(자기 폭의 25%)만큼
+     밀었다가 되돌아오므로, 어느 순간에도 화면 끝까지 선이 차 있다. */
+  .ieg-flow-line {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    transform-box: fill-box;
+    animation: iegFlow 50s linear infinite;
   }
-
-  /* 2) 망점 — 신문 인쇄의 점. 모든 점 레이어는 같은 14px 격자를 써서 겹쳐도 어긋나지 않는다.
-        마스크 두 장을 교집합으로 겹쳐 '여백 안' 이면서 '한쪽 위아래로 짙어지는' 모양을 만든다. */
-  .ieg-bg-ink, .ieg-bg-ink2, .ieg-bg-red, .ieg-bg-reveal { background-size: 14px 14px; }
-
-  /* 오른쪽 여백: 먹색, 위쪽이 짙다. 바깥 가장자리일수록 점이 커져 진짜 망점처럼 크기가 변한다. */
-  .ieg-bg-ink {
-    background-image: radial-gradient(circle, rgba(51,51,51,0.28) 1.1px, transparent 1.7px);
-    -webkit-mask-image:
-      linear-gradient(to left, #000, transparent var(--gut)),
-      linear-gradient(to bottom, #000, rgba(0,0,0,0.22) 72%, transparent);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(to left, #000, transparent var(--gut)),
-      linear-gradient(to bottom, #000, rgba(0,0,0,0.22) 72%, transparent);
-    mask-composite: intersect;
-  }
-  .ieg-bg-ink2 {
-    background-image: radial-gradient(circle, rgba(51,51,51,0.32) 2.5px, transparent 3.1px);
-    -webkit-mask-image:
-      linear-gradient(to left, #000, transparent calc(var(--gut) * 0.5)),
-      linear-gradient(to bottom, #000, transparent 52%);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(to left, #000, transparent calc(var(--gut) * 0.5)),
-      linear-gradient(to bottom, #000, transparent 52%);
-    mask-composite: intersect;
-  }
-  /* 왼쪽 여백: 빨강, 아래쪽이 짙다 — 오른쪽 위 먹색과 대각선으로 균형을 맞춘다 */
-  .ieg-bg-red {
-    background-image: radial-gradient(circle, rgba(255,0,0,0.26) 1.4px, transparent 2px);
-    -webkit-mask-image:
-      linear-gradient(to right, #000, transparent var(--gut)),
-      linear-gradient(to top, #000, rgba(0,0,0,0.2) 72%, transparent);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(to right, #000, transparent var(--gut)),
-      linear-gradient(to top, #000, rgba(0,0,0,0.2) 72%, transparent);
-    mask-composite: intersect;
-  }
-
-  /* 4) 커서 빛 — 커서가 화면 위에 있을 때만 켜진다 */
-  .ieg-bg-spot {
-    background: radial-gradient(560px circle at var(--mx) var(--my),
-      rgba(255,179,0,0.16), rgba(255,0,0,0.05) 42%, transparent 70%);
-  }
-  /* 5) 커서 아래에서만 드러나는 빨간 망점 — 이것도 여백 안에서만 드러나 본문 글자를 가리지 않는다 */
-  .ieg-bg-reveal {
-    background-image: radial-gradient(circle, rgba(255,0,0,0.5) 1.8px, transparent 2.4px);
-    -webkit-mask-image:
-      radial-gradient(260px circle at var(--mx) var(--my), #000, transparent 72%),
-      linear-gradient(to right, #000, transparent var(--gut), transparent calc(100% - var(--gut)), #000);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      radial-gradient(260px circle at var(--mx) var(--my), #000, transparent 72%),
-      linear-gradient(to right, #000, transparent var(--gut), transparent calc(100% - var(--gut)), #000);
-    mask-composite: intersect;
-  }
-  .ieg-bg-spot, .ieg-bg-reveal { opacity: 0; transition: opacity .7s var(--ease); }
-  .ieg-bg.is-on .ieg-bg-spot, .ieg-bg.is-on .ieg-bg-reveal { opacity: 1; }
-  /* 커서가 없는 기기(휴대폰·태블릿)에서는 빛 효과를 쓰지 않는다 */
-  @media (hover: none) { .ieg-bg-spot, .ieg-bg-reveal { display: none !important; } }
+  @keyframes iegFlow { to { transform: translateX(-25%); } }
 
 
   /* 인쇄물 같은 고운 입자 — 화면이 플라스틱처럼 매끈해 보이지 않게 한다 */
@@ -140,11 +73,6 @@
   }
 
   /* ── 움직임 ── */
-  @keyframes iegDrift {
-    0%   { transform: translate3d(0, 0, 0) scale(1); }
-    50%  { transform: translate3d(-2.5%, 2%, 0) scale(1.07); }
-    100% { transform: translate3d(2%, -2.5%, 0) scale(1.03); }
-  }
   @keyframes iegIn   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes iegFade { from { opacity: 0; } to { opacity: 1; } }
   /* 항목이 아래에서 떠오른다. hover의 transform과 겹치지 않도록 translate 속성만 쓴다. */
@@ -405,12 +333,17 @@
 </helmet>
 <!-- 배경. 본문 래퍼(z-index:1) 바깥에 있어야 글자를 덮지 않는다. -->
 <div class="ieg-bg" aria-hidden="true">
-  <i class="ieg-bg-glow"></i>
-  <i class="ieg-bg-ink"></i>
-  <i class="ieg-bg-ink2"></i>
-  <i class="ieg-bg-red"></i>
-  <i class="ieg-bg-spot"></i>
-  <i class="ieg-bg-reveal"></i>
+  <svg class="ieg-flow" viewBox="0 0 2400 1000" preserveAspectRatio="none">
+    <path class="ieg-flow-line" d="M 0 150 C 200 116 400 116 600 150 C 800 184 1000 184 1200 150 C 1400 116 1600 116 1800 150 C 2000 184 2200 184 2400 150 C 2600 116 2800 116 3000 150 C 3200 184 3400 184 3600 150 C 3800 116 4000 116 4200 150 C 4400 184 4600 184 4800 150" stroke="rgba(51,51,51,.13)" stroke-width="1" style="animation-duration:48s"></path>
+    <path class="ieg-flow-line" d="M -137 230 C 63 184 263 184 463 230 C 663 276 863 276 1063 230 C 1263 184 1463 184 1663 230 C 1863 276 2063 276 2263 230 C 2463 184 2663 184 2863 230 C 3063 276 3263 276 3463 230 C 3663 184 3863 184 4063 230 C 4263 276 4463 276 4663 230" stroke="rgba(51,51,51,.10)" stroke-width="1" style="animation-duration:62s"></path>
+    <path class="ieg-flow-line" d="M -274 320 C -74 292 126 292 326 320 C 526 348 726 348 926 320 C 1126 292 1326 292 1526 320 C 1726 348 1926 348 2126 320 C 2326 292 2526 292 2726 320 C 2926 348 3126 348 3326 320 C 3526 292 3726 292 3926 320 C 4126 348 4326 348 4526 320" stroke="rgba(255,0,0,.30)" stroke-width="1.4" style="animation-duration:40s"></path>
+    <path class="ieg-flow-line" d="M -411 420 C -211 368 -11 368 189 420 C 389 472 589 472 789 420 C 989 368 1189 368 1389 420 C 1589 472 1789 472 1989 420 C 2189 368 2389 368 2589 420 C 2789 472 2989 472 3189 420 C 3389 368 3589 368 3789 420 C 3989 472 4189 472 4389 420" stroke="rgba(51,51,51,.10)" stroke-width="1" style="animation-duration:70s"></path>
+    <path class="ieg-flow-line" d="M -548 520 C -348 482 -148 482 52 520 C 252 558 452 558 652 520 C 852 482 1052 482 1252 520 C 1452 558 1652 558 1852 520 C 2052 482 2252 482 2452 520 C 2652 558 2852 558 3052 520 C 3252 482 3452 482 3652 520 C 3852 558 4052 558 4252 520" stroke="rgba(255,179,0,.40)" stroke-width="1.4" style="animation-duration:54s"></path>
+    <path class="ieg-flow-line" d="M -685 610 C -485 566 -285 566 -85 610 C 115 654 315 654 515 610 C 715 566 915 566 1115 610 C 1315 654 1515 654 1715 610 C 1915 566 2115 566 2315 610 C 2515 654 2715 654 2915 610 C 3115 566 3315 566 3515 610 C 3715 654 3915 654 4115 610" stroke="rgba(51,51,51,.12)" stroke-width="1" style="animation-duration:58s"></path>
+    <path class="ieg-flow-line" d="M -822 710 C -622 680 -422 680 -222 710 C -22 740 178 740 378 710 C 578 680 778 680 978 710 C 1178 740 1378 740 1578 710 C 1778 680 1978 680 2178 710 C 2378 740 2578 740 2778 710 C 2978 680 3178 680 3378 710 C 3578 740 3778 740 3978 710" stroke="rgba(51,51,51,.09)" stroke-width="1" style="animation-duration:44s"></path>
+    <path class="ieg-flow-line" d="M -959 800 C -759 750 -559 750 -359 800 C -159 850 41 850 241 800 C 441 750 641 750 841 800 C 1041 850 1241 850 1441 800 C 1641 750 1841 750 2041 800 C 2241 850 2441 850 2641 800 C 2841 750 3041 750 3241 800 C 3441 850 3641 850 3841 800" stroke="rgba(255,0,0,.20)" stroke-width="1.2" style="animation-duration:66s"></path>
+    <path class="ieg-flow-line" d="M -1096 890 C -896 854 -696 854 -496 890 C -296 926 -96 926 104 890 C 304 854 504 854 704 890 C 904 926 1104 926 1304 890 C 1504 854 1704 854 1904 890 C 2104 926 2304 926 2504 890 C 2704 854 2904 854 3104 890 C 3304 926 3504 926 3704 890" stroke="rgba(51,51,51,.10)" stroke-width="1" style="animation-duration:50s"></path>
+  </svg>
 </div>
 <div style="position:relative;z-index:1;min-height:100vh;padding:0 clamp(20px,5vw,64px) 0">
   <div style="max-width:1160px;margin:0 auto">
@@ -717,30 +650,9 @@ class Component extends DCLogic {
       });
     };
     this._onResize = () => this.updateRail();
-    // 배경의 커서 빛. 배경 요소의 CSS 변수만 직접 바꾸므로 React가 다시 그리지 않는다.
-    // 한 프레임에 한 번만 반영하고, 그 사이 들어온 움직임은 마지막 위치만 쓴다.
-    this._onMove = (e) => {
-      this._mx = e.clientX;
-      this._my = e.clientY;
-      if (this._raf) return;
-      this._raf = requestAnimationFrame(() => {
-        this._raf = 0;
-        const bg = this._bg || (this._bg = document.querySelector('.ieg-bg'));
-        if (!bg) return;
-        bg.style.setProperty('--mx', this._mx + 'px');
-        bg.style.setProperty('--my', this._my + 'px');
-        if (!bg.classList.contains('is-on')) bg.classList.add('is-on');
-      });
-    };
-    // 커서가 창 밖으로 나가면 빛을 끈다
-    this._onLeave = () => {
-      if (this._bg) this._bg.classList.remove('is-on');
-    };
     window.addEventListener('keydown', this._onKey);
     window.addEventListener('scroll', this._onScroll, { passive: true });
     window.addEventListener('resize', this._onResize, { passive: true });
-    window.addEventListener('pointermove', this._onMove, { passive: true });
-    document.documentElement.addEventListener('mouseleave', this._onLeave);
 
     this._view = this.state.tab + ':' + this.state.page;
     requestAnimationFrame(() => this.updateRail());
@@ -759,9 +671,6 @@ class Component extends DCLogic {
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('scroll', this._onScroll);
     window.removeEventListener('resize', this._onResize);
-    window.removeEventListener('pointermove', this._onMove);
-    document.documentElement.removeEventListener('mouseleave', this._onLeave);
-    if (this._raf) cancelAnimationFrame(this._raf);
     if (this._sraf) cancelAnimationFrame(this._sraf);
     clearTimeout(this._railT);
   }

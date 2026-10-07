@@ -246,19 +246,12 @@
   }
   .ieg-row:hover .ieg-title { color: var(--red); }
   .ieg-title { transition: color .2s var(--ease); }
-  /* 썸네일 자리는 이미지가 있든 없든 같은 크기라, 모든 제목이 같은 줄에서 시작한다 */
+  /* 썸네일은 사진이 있는 기사에만 있고, 크기는 모두 같다. 사진이 없는 기사는 칸 없이 글만 둔다. */
   .ieg-thumb {
     flex: 0 0 auto; display: block; overflow: hidden;
     width: clamp(88px, 11vw, 132px); height: clamp(62px, 7.6vw, 92px);
     background: #EFE9DE; border: 1px solid var(--line-soft);
   }
-  /* 이미지가 없는 기사는 신문 망점 같은 빗금만 깐다 */
-  .ieg-thumb.is-empty {
-    background-image: repeating-linear-gradient(135deg,
-      rgba(51,51,51,0.075) 0 1px, transparent 1px 7px);
-    transition: background-color .5s var(--ease);
-  }
-  .ieg-row:hover .ieg-thumb.is-empty { background-color: #F7F0E3; }
   /* 썸네일은 평소엔 색을 살짝 눌러 두고, 커서를 올리면 제 색으로 살아난다 */
   .ieg-thumb img {
     display: block; width: 100%; height: 100%; object-fit: cover;
@@ -525,7 +518,10 @@
         <button class="{{ tabPressClass }}" onClick="{{ showPress }}" aria-pressed="{{ isPress }}">언론 보도</button>
       </div>
 
-      <sc-if value="{{ isPress }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ isNewsletter }}" hint-placeholder-val="{{ true }}">
+        <p class="ieg-note">월간 주요 소식</p>
+      </sc-if>
+      <sc-if value="{{ isPress }}" hint-placeholder-val="{{ false }}">
         <p class="ieg-note">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
       </sc-if>
       </nav>
@@ -558,13 +554,11 @@
     <section>
       <sc-for list="{{ items }}" as="item" hint-placeholder-count="12">
         <div class="ieg-row" data-ym="{{ item.ym }}">
+          <!-- 썸네일은 사진이 있는 기사에만 둔다. 사진이 깨지면 그 칸을 빼고 글만 남긴다. -->
           <sc-if value="{{ item.img }}" hint-placeholder-val="{{ true }}">
             <a class="ieg-thumb" href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true">
               <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer">
             </a>
-          </sc-if>
-          <sc-if value="{{ !item.img }}" hint-placeholder-val="{{ false }}">
-            <a class="ieg-thumb is-empty" href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true"></a>
           </sc-if>
           <div style="flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
@@ -669,7 +663,7 @@ const ARTICLES = [
   { m:'전자신문', d:'2026-07-24', t:'아이지, 온라인-오프라인 통합 플랫폼 구축으로 기술교육 플랫폼 기업 도약', u:'https://www.etnews.com/20260724000315', img:'https://img.etnews.com/news/article/2026/07/24/news-p.v1.20260724.ab2cd0cc6f1b413ca6cb1d75efdfb829_P1.jpg' },
   { m:'연합뉴스', d:'2026-07-23', t:'교육장비 넘어 플랫폼으로…아이지, 미래 기술교육 새판 짠다', u:'https://kgyonhapnews.net/256754', img:'https://www.kgyonhapnews.net/data/kgyonhapnews_net/mainimages/202607/600_277_2026072306235147.jpg' },
   { m:'아시아경제', d:'2026-07-23', t:'아이지, 오픈랩·아이지랩닷컴 구축…온·오프라인 기술교육 강화', u:'https://view.asiae.co.kr/article/2026072313183421696', img:'https://cphoto.asiae.co.kr/listimglink/1/2026072313114455943_1784779904.jpg' },
-  { m:'경기도', d:'2026-07-22', t:'경기도, 피지컬 AI 협의체 구성 논의 — 참여기업으로 아이지 언급', u:'https://gnews.gg.go.kr/briefing/brief_gongbo_view.do?BS_CODE=s017&number=70985', img:'https://gnews.gg.go.kr/img/new2024/common/news_bi_og.png' },
+  { m:'경기도', d:'2026-07-22', t:'경기도, 피지컬 AI 협의체 구성 논의 — 참여기업으로 아이지 언급', u:'https://gnews.gg.go.kr/briefing/brief_gongbo_view.do?BS_CODE=s017&number=70985' },
 
   { m:'매일경제', d:'2026-03-17', t:'㈜아이지 김창일 대표이사, 성남상공대상 SW개발대상 수상…자율제조 SW 기술력 인정', u:'https://www.mk.co.kr/news/business/11990074', img:'https://pimg.mk.co.kr/news/cms/202603/17/news-p.v1.20260317.35f0598e9cc447389df79fc456278110_R.jpg' },
   { m:'산업일보', d:'2026-03-29', t:'아이지, 라벨링 공정 ‘골든타임’ 사수하는 자동화 장비 선보여', u:'https://kidd.co.kr/news/245447', img:'https://pimg3.daara.co.kr/kidd/photo/2026/03/27/1774594165_56.jpg' },
@@ -680,7 +674,7 @@ const ARTICLES = [
   { m:'파이낸셜뉴스', d:'2025-09-25', t:'아이지, ‘라벨엑스포 유럽 2025’서 DX 라벨러 공개', u:'https://www.fnnews.com/news/202509251735485356', img:'https://image.fnnews.com/resource/media/image/2025/09/25/202509251738581168_e.png' },
 
   { m:'매일경제', d:'2025-08-14', t:'“스마트팩토리 맞춤형 인재 우리가 키웁니다”', u:'https://www.mk.co.kr/news/business/11393466', img:'https://pimg.mk.co.kr/news/cms/202508/14/news-p.v1.20250813.8c3bef119adc4442b2e7f514acddec5a_R.jpg' },
-  { m:'머니투데이', d:'2025-08-13', t:'LG전자·오스템 사로잡은 K테크에듀 선구자…독보적 기술 뭐길래', u:'https://www.mt.co.kr/future/2025/08/13/2025081307071739825', img:'https://thumb.mt.co.kr/cdn-cgi/image/f=avif/21/2025/08/2025081307071739825_1.jpg' },
+  { m:'머니투데이', d:'2025-08-13', t:'LG전자·오스템 사로잡은 K테크에듀 선구자…독보적 기술 뭐길래', u:'https://www.mt.co.kr/future/2025/08/13/2025081307071739825', img:'https://thumb.mt.co.kr/cdn-cgi/image/f=auto/21/2025/08/2025081307071739825_1.jpg' },
   { m:'이데일리', d:'2025-08-13', t:'“원조 받던 나라에서 원조하는 나라로”…아이지, K테크에듀 강자로 ‘우뚝’', u:'https://m3.edaily.co.kr/News/Read?mediaCodeNo=257&newsId=04083606642266992', img:'https://image.edaily.co.kr/images/Photo/files/NP/S/2025/08/PS25081301540.jpg' },
   { m:'파이낸셜뉴스', d:'2025-08-13', t:'“라벨 갈 시간도 없다”…아이지, LG·오스템이 택한 이유', u:'https://www.fnnews.com/news/202508131058391258', img:'https://image.fnnews.com/resource/media/image/2025/08/13/202508131100240476_e.JPG' },
   { m:'파이낸셜뉴스', d:'2025-08-13', t:'기술인력 비중 65%…“직업훈련 현장 디지털 선도”', u:'https://www.fnnews.com/news/202508131752117832', img:'https://image.fnnews.com/resource/media/image/2025/08/13/202508131752114588_e.jpg' },
@@ -694,7 +688,7 @@ const ARTICLES = [
   { m:'뉴스핌', d:'2025-03-21', t:'뉴로메카, 아이지와 전략적 파트너십 체결', u:'https://search.newspim.com/news/view/20250321000533', img:'https://img.newspim.com/news/2025/03/21/2503211330106760_453_tc.jpg' },
 
   { m:'한국경제', d:'2024-12-27', t:'신약 개발 기업·AI 전문 업체에 뭉칫돈', u:'https://www.hankyung.com/article/202412272288i' },
-  { m:'한국경제', d:'2024-12-24', t:'바이오 기업 핀테라퓨틱스, 시리즈C 200억 확보 [VC브리핑]', u:'https://plus.hankyung.com/apps/newsinside.view?aid=202412246242r&category=&sns=y', img:'https://plus.hankyung.com/img/facebook_thumb_hankyung.jpg' },
+  { m:'한국경제', d:'2024-12-24', t:'바이오 기업 핀테라퓨틱스, 시리즈C 200억 확보 [VC브리핑]', u:'https://plus.hankyung.com/apps/newsinside.view?aid=202412246242r&category=&sns=y' },
   { m:'전자신문', d:'2024-12-18', t:'IBK벤처투자, 첫 벤처펀드 결성하고 1호 투자 개시', u:'https://www.etnews.com/20241218000403', img:'https://img.etnews.com/news/article/2024/12/18/news-p.v1.20241218.0ad18a068e6c450fa24fafb703de53c7_P1.png' },
   { m:'머니투데이', d:'2024-12-28', t:'설립 15년차 기술교육 기업에 50억 베팅한 벤처캐피탈, 이유는?', u:'https://www.mt.co.kr/future/2024/12/28/2024122707195683057', img:'https://thumb.mt.co.kr/cdn-cgi/image/w=1200,h=827,fit=cover,bg=white,f=auto,quality=high,sharpen=2,g=face/21/2024/12/2024122707195683057_1.jpg' },
   { m:'머니투데이', d:'2024-12-23', t:'기술교육 기업 아이지, 50억원 투자 유치…“글로벌 시장 공략”', u:'https://www.mt.co.kr/future/2024/12/23/2024122313432413519', img:'https://thumb.mt.co.kr/cdn-cgi/image/w=1200,h=676,fit=cover,bg=white,f=auto,quality=high,sharpen=2,g=face/21/2024/12/2024122313432413519_1.jpg' },
@@ -721,7 +715,7 @@ const ARTICLES = [
 
   { m:'경기일보', d:'2018-11-26', t:'기술개발 올인…4차 산업혁명 꿈꾼다 ㈜아이지', u:'https://www.kyeonggi.com/article/201811261027232', img:'https://ypzxxdrj8709.edge.naverncp.com/data2/content/image/2018/11/26/.cache/512/201811260807681.jpg?v=20260918022913' },
   { m:'월간로봇기술', d:'2018-10-30', t:'(주)아이지, 스마트공장 전문 기업으로 거듭나다', u:'https://robotzine.co.kr/entry/241134' },
-  { m:'매일경제', d:'2018-09-17', t:'스마트공장 실습실 구축, 삼성 등 대기업도 러브콜', u:'https://www.mk.co.kr/news/business/8480010', img:'https://static.mk.co.kr/facebook_mknews.jpg' },
+  { m:'매일경제', d:'2018-09-17', t:'스마트공장 실습실 구축, 삼성 등 대기업도 러브콜', u:'https://www.mk.co.kr/news/business/8480010' },
 
   { m:'월간로봇기술', d:'2017-04-26', t:'교육장비 분야의 新시장 여는 (주)아이지', u:'https://robotzine.co.kr/entry/215716' },
   { m:'KOTRA', d:'2017', t:'교육훈련 장비 분야 일류기업, 아이지', u:'https://www.k-neiss.org/kotra/success-case/187' },
@@ -784,8 +778,16 @@ const READ_GAP = 48;   // 판정선은 탭 줄 아래 이만큼 (JUMP_GAP보다 
 class Component extends DCLogic {
   state = {
     tab: 'newsletter', page: 1, modalIndex: null, showTop: false, stuck: false,
-    railCur: null, railPos: 0, railActive: false
+    railCur: null, railPos: 0, railActive: false,
+    brokenImg: {}   // 불러오지 못한 썸네일 주소. 그 기사는 썸네일 칸 없이 글만 보인다.
   };
+
+  // 썸네일이 깨졌거나(매체가 사진을 막거나 지운 경우) 점 같은 빈 그림이 오면 그 칸을 뺀다
+  dropImg(src) {
+    if (src && !this.state.brokenImg[src]) {
+      this.setState(s => ({ brokenImg: { ...s.brokenImg, [src]: true } }));
+    }
+  }
 
   componentDidMount() {
     this._onKey = (e) => {
@@ -812,6 +814,22 @@ class Component extends DCLogic {
       });
     };
     this._onResize = () => this.updateRail();
+    // 휠·터치·키보드·마우스 누름은 사람이 직접 움직인다는 신호라 눈금으로 고른 달의 고정을 푼다.
+    // 눈금 클릭은 mousedown 다음에 오므로 고정이 풀린 뒤 다시 걸린다.
+    this._unpin = () => { this._pin = null; };
+    this._unpinOn = ['wheel', 'touchstart', 'keydown', 'mousedown'];
+    this._unpinOn.forEach(t => window.addEventListener(t, this._unpin, { passive: true }));
+    // 썸네일이 깨지거나 점 같은 빈 그림이 오면 그 기사의 썸네일 칸을 뺀다(dropImg).
+    // img의 load·error는 위로 올라오지 않으므로 window에서 capture로 받는다.
+    // (템플릿에 onError를 쓰면 원본 HTML이 먼저 깔릴 때 브라우저 기본 속성으로 실행돼 오류가 난다.)
+    this._onImg = (e) => {
+      const im = e.target;
+      if (!im || im.tagName !== 'IMG' || !im.closest('.ieg-thumb')) return;
+      if (e.type === 'error' || im.naturalWidth < 40 || im.naturalHeight < 30) this.dropImg(im.getAttribute('src'));
+    };
+    window.addEventListener('error', this._onImg, true);
+    window.addEventListener('load', this._onImg, true);
+    this.scanThumbs();
     window.addEventListener('keydown', this._onKey);
     window.addEventListener('scroll', this._onScroll, { passive: true });
     window.addEventListener('resize', this._onResize, { passive: true });
@@ -830,6 +848,7 @@ class Component extends DCLogic {
 
   // 탭이나 페이지가 바뀌면 화면에 있는 기사가 달라지므로 게이지를 다시 맞춘다
   componentDidUpdate() {
+    this.scanThumbs();
     const view = this.state.tab + ':' + this.state.page;
     if (view !== this._view) {
       this._view = view;
@@ -837,10 +856,22 @@ class Component extends DCLogic {
     }
   }
 
+  // 리스너(_onImg)가 놓친 그림도 같은 기준으로 본다. 아주 빨리 뜨는 그림(캐시, 작은 그림)은 React가
+  // 화면에 붙이기 전에 로드가 끝나 window까지 이벤트가 오지 않는다. 그려질 때마다 썸네일 10개만 훑으므로 가볍다.
+  // 아직 안 불러온 지연 로딩 그림은 complete가 false라 건너뛴다.
+  scanThumbs() {
+    document.querySelectorAll('.ieg-thumb img').forEach(im => {
+      if (im.complete && (im.naturalWidth < 40 || im.naturalHeight < 30)) this.dropImg(im.getAttribute('src'));
+    });
+  }
+
   componentWillUnmount() {
     window.removeEventListener('keydown', this._onKey);
     window.removeEventListener('scroll', this._onScroll);
     window.removeEventListener('resize', this._onResize);
+    this._unpinOn.forEach(t => window.removeEventListener(t, this._unpin));
+    window.removeEventListener('error', this._onImg, true);
+    window.removeEventListener('load', this._onImg, true);
     if (this._sraf) cancelAnimationFrame(this._sraf);
     if (this._ro) this._ro.disconnect();
     clearTimeout(this._railT);
@@ -874,6 +905,12 @@ class Component extends DCLogic {
     // 아직 내리지 않았을 때(이미지가 덜 내려와 문서가 화면보다 짧을 때 포함)는 맨 끝으로 보지 않는다.
     const h = document.documentElement;
     if (h.scrollTop > 0 && h.scrollTop + h.clientHeight >= h.scrollHeight - 2) { i = marks.length - 1; f = 0; }
+    // 눈금을 눌러 이동했다면 그 연·월을 가리킨다. 페이지가 짧아 그 달이 판정선까지 못 올라오고
+    // 위 '맨 끝' 판정에 걸리더라도, 사람이 고른 달이 우선이다. 직접 스크롤하면 풀린다(_unpin).
+    if (this._pin) {
+      const k = marks.findIndex(m => m.ym === this._pin);
+      if (k >= 0) { i = k; f = 0; }
+    }
 
     const a = keys.indexOf(marks[i].ym);
     const b = marks[i + 1] ? keys.indexOf(marks[i + 1].ym) : a;
@@ -887,6 +924,8 @@ class Component extends DCLogic {
   // 게이지의 눈금을 누르면 그 연·월의 첫 기사(또는 그 호)로 이동한다.
   // 언론 보도에서 그 달이 다른 페이지에 있으면 페이지를 바꾼 뒤, 다 그려지고 나서 이동한다.
   jumpTo(ym) {
+    // 고른 연·월은 사람이 직접 스크롤하기 전까지 게이지에 그대로 둔다(updateRail 참고)
+    this._pin = ym;
     const go = () => {
       const el = document.querySelector('[data-ym="' + ym + '"]');
       if (!el) return;
@@ -901,7 +940,9 @@ class Component extends DCLogic {
       const idx = SORTED.findIndex(a => ymOf(a.d) === ym);
       const page = Math.floor(Math.max(0, idx) / PER_PAGE) + 1;
       if (page !== this.state.page) {
-        this.setState({ page }, () => requestAnimationFrame(go));
+        // 새 페이지가 그려진 직후(setState 콜백) 바로 옮긴다. 다음 프레임을 기다리면
+        // 프레임이 늦는 환경에서 페이지만 바뀌고 스크롤이 안 되는 일이 생긴다.
+        this.setState({ page }, go);
         return;
       }
     }
@@ -976,7 +1017,8 @@ class Component extends DCLogic {
       items: slice.map(a => ({
         ym: ymOf(a.d),
         date: dateLabel(a.d), media: a.m, title: a.t, url: a.u,
-        note: a.note || '', img: a.img || ''
+        note: a.note || '',
+        img: a.img && !s.brokenImg[a.img] ? a.img : ''
       })),
       railShow: keys.length > 1,
       railClass: s.railActive ? 'ieg-rail is-active' : 'ieg-rail',

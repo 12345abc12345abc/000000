@@ -58,12 +58,41 @@
   @keyframes iegRise { from { opacity: 0; translate: 0 20px; } to { opacity: 1; translate: 0 0; } }
   @keyframes iegZoom { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
   /* 스크롤해서 새로 들어오는 항목만 들어오는 만큼 떠오른다 (지원 브라우저) */
+  /* ── 스크롤 애니메이션: 모두 스크롤 위치에 묶여 있어 화면이 처음 뜰 때는 움직이지 않고,
+     스크롤을 되돌리면 효과도 되돌아간다. 지원하지 않는 브라우저에서는 효과 없이 그대로 보인다.
+     hover의 transform과 겹치지 않도록 등장 효과는 translate·scale 속성만 쓴다. ── */
+  @keyframes iegSheetIn { from { opacity: 0; scale: .9; translate: 0 64px; } to { opacity: 1; scale: 1; translate: 0 0; } }
+  @keyframes iegCardIn  { from { opacity: 0; scale: .96; translate: 0 44px; } to { opacity: 1; scale: 1; translate: 0 0; } }
+  @keyframes iegFromL   { from { opacity: 0; translate: -36px 0; } to { opacity: 1; translate: 0 0; } }
+  @keyframes iegFromR   { from { opacity: 0; translate: 36px 0; } to { opacity: 1; translate: 0 0; } }
+  @keyframes iegPop     { from { scale: 0; } 70% { scale: 1.5; } to { scale: 1; } }
+  @keyframes iegPar     { from { scale: 1.14; translate: 0 -6%; } to { scale: 1.14; translate: 0 6%; } }
+  @keyframes iegNavIn   { from { height: var(--nav-h); } to { height: 60px; } }
+  @keyframes iegMarkIn  { from { scale: 1; } to { scale: .72; } }
   @supports (animation-timeline: view()) {
-    .ieg-row, .ieg-sheet, .ieg-card {
-      animation: iegRise linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 18%;
-    }
+    /* 머리 막대: 내리면 얇아지고 제호가 작아진다(맨 위로 오면 다시 커진다) */
+    .ieg-nav .ieg-in { animation: iegNavIn linear both; animation-timeline: scroll(root); animation-range: 0 160px; }
+    .ieg-nav .ieg-mark { transform-origin: left center; animation: iegMarkIn linear both; animation-timeline: scroll(root); animation-range: 0 160px; }
+    /* 구역 제목은 왼쪽에서, 안내 문구는 오른쪽에서 들어온다 */
+    .ieg-sec-head h2 { animation: iegFromL linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    .ieg-sec-head .ieg-note { animation: iegFromR linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    /* 호 표시 앞 노란 점이 톡 튀어나온다 */
+    .ieg-issue-label::before { animation: iegPop linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    /* 소식지 지면: 들어오면서 살짝 작고 아래에 있다가 제 크기로 떠오른다 */
+    .ieg-sheet { animation: iegSheetIn linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+    /* 기사 카드: 한 줄의 세 장이 차례로 떠오른다 */
+    .ieg-card { animation: iegCardIn linear both; animation-timeline: view(); animation-range: cover 0% cover 22%; }
+    .ieg-card:nth-child(3n+2) { animation-range: cover 4% cover 26%; }
+    .ieg-card:nth-child(3n+3) { animation-range: cover 8% cover 30%; }
+    /* 언론 보도 목록 줄 */
+    .ieg-row { animation: iegRise linear both; animation-timeline: view(); animation-range: cover 0% cover 18%; }
+    /* 사진은 스크롤보다 조금 느리게 움직여 깊이감이 생긴다 */
+    .ieg-card-img img, .ieg-thumb img { animation: iegPar linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+    /* 더보기·페이지 번호는 아래에서 떠오른다 */
+    .ieg-more, .ieg-pager { animation: iegRise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  }
+  @media (max-width: 899px) {
+    .ieg-card:nth-child(3n+2), .ieg-card:nth-child(3n+3) { animation-range: cover 0% cover 22%; }
   }
 
   /* ── 뼈대 ── */
@@ -162,10 +191,12 @@
   @media (max-width: 899px) { .ieg-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .ieg-card { display: flex; flex-direction: column; color: var(--ink); }
   .ieg-card-img {
-    display: block; overflow: hidden; border-radius: 12px; background: var(--parch);
-    aspect-ratio: 16 / 10; margin-bottom: 14px;
+    /* overflow: clip — hidden이면 스크롤 상자가 되어 안의 사진이 페이지 스크롤에 반응하지 못한다 */
+    /* min-height: 0 + 사진 absolute — clip이면 사진 원래 비율대로 상자가 늘어나므로 16:10을 고정한다 */
+    position: relative; display: block; overflow: clip; border-radius: 12px; background: var(--parch);
+    aspect-ratio: 16 / 10; min-height: 0; margin-bottom: 14px;
   }
-  .ieg-card-img img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
+  .ieg-card-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
   .ieg-card:hover .ieg-card-img img { transform: scale(1.04); }
   .ieg-card-title {
     font-family: var(--font-display);
@@ -215,10 +246,10 @@
   .ieg-row:hover { background: var(--amber-soft); }
   .ieg-row:hover .ieg-title { color: var(--red); }
   .ieg-thumb {
-    flex: 0 0 auto; display: block; overflow: hidden; border-radius: 8px; background: var(--parch);
-    width: clamp(96px, 15vw, 168px); aspect-ratio: 16 / 10;
+    position: relative; flex: 0 0 auto; display: block; overflow: clip; border-radius: 8px; background: var(--parch);
+    width: clamp(96px, 15vw, 168px); aspect-ratio: 16 / 10; min-height: 0;
   }
-  .ieg-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
+  .ieg-thumb img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
   .ieg-row:hover .ieg-thumb img { transform: scale(1.05); }
   .ieg-meta {
     display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 6px;

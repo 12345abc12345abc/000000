@@ -233,13 +233,12 @@
   }
 
   /* ── 꼬리말 ── */
-  /* 꼬리말: 짙은 면(#333333), 제호의 NEWS는 노랑 */
-  .ieg-foot { background: var(--ink); }
-  .ieg-foot-mark span { color: var(--amber); }
+  /* 꼬리말: 연회색 면. 제호는 머리 막대와 똑같은 모양(.ieg-mark)을 그대로 쓴다. */
+  .ieg-foot { background: var(--parch); border-top: 1px solid var(--hair); }
   .ieg-foot .ieg-in {
-    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px;
-    padding-top: 22px; padding-bottom: 28px;
-    font-size: 12px; line-height: 1.33; letter-spacing: -0.01em; color: rgba(255,255,255,0.72);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+    padding-top: 28px; padding-bottom: 32px;
+    font-size: 12px; line-height: 1.33; letter-spacing: -0.01em; color: var(--muted);
   }
 
   /* ── 오른쪽 날짜 게이지 (언론 보도의 연·월) ── */
@@ -472,7 +471,7 @@
 
   <footer class="ieg-foot">
     <div class="ieg-in">
-      <span class="ieg-foot-mark">IEG<span> NEWS</span></span>
+      <p class="ieg-mark"><a href="#/">IEG<span> NEWS</span></a></p>
       <span>주식회사 아이지 · TECH-EDU</span>
     </div>
   </footer>

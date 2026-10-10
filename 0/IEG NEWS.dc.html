@@ -14,14 +14,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   /* 디자인 시스템: Update/0.txt (Apple 웹 디자인 언어)를 따른다.
-     흰 면 / 연회색(parchment) 면을 번갈아 쓰고, 장식(그라데이션·무늬·테두리 장식)은 없다.
-     강조색은 하나뿐이며 IEG 대표색(빨강)이 그 역할을 한다. 그림자는 사진(소식지 지면)에만 하나 쓴다. */
+     흰 면 / 연회색(parchment) 면 / 짙은 면을 번갈아 쓰고, 배경 장식(무늬·입자·질감)은 없다.
+     색은 IEG 브랜드 세 가지를 조화로운 포인트로 쓴다:
+       #333333 글자와 짙은 면, #FF0000 주 포인트(누르는 것·현재), #FFB300 보조 포인트(막대·점·hover 면).
+     그림자는 사진(소식지 지면)에만 하나 쓴다. */
   :root {
-    --ink: #1d1d1f;          /* 모든 글자 */
+    --ink: #333333;          /* 모든 글자, 짙은 면 (브랜드 무채색) */
     --ink-80: #333333;       /* 약간 부드러운 글자 */
     --muted: #6e6e73;        /* 보조 글자 */
     --muted-48: #86868b;     /* 작은 안내 글자 */
-    --red: #FF0000;          /* 단 하나의 강조색 */
+    --red: #FF0000;          /* 주 포인트 (브랜드 대표색) */
+    --amber: #FFB300;        /* 보조 포인트 (브랜드 보조색) */
+    --amber-soft: rgba(255,179,0,0.10); /* 보조 포인트를 옅게 깐 면 */
+    /* 브랜드 띠: 무채색 · 빨강 · 노랑을 끊어서 잇는다 */
+    --brand-band: linear-gradient(90deg, #333333 0 72%, #FF0000 72% 90%, #FFB300 90% 100%);
     --canvas: #FFFFFF;       /* 흰 면 */
     --parch: #F5F5F7;        /* 연회색 면 */
     --hair: rgba(0,0,0,0.08);/* 머리카락 선 */
@@ -44,7 +50,7 @@
   }
   * { font-family: inherit; }
   a { color: var(--ink); text-decoration: none; }
-  ::selection { background: rgba(255,0,0,0.16); }
+  ::selection { background: rgba(255,179,0,0.38); color: var(--ink); }
   :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
   button { font: inherit; }
 
@@ -70,6 +76,8 @@
 
   /* 머리말: 제호와 회사명 */
   .ieg-head { background: var(--canvas); }
+  /* 맨 위 브랜드 띠 */
+  .ieg-head::before { content: ""; display: block; height: 4px; background: var(--brand-band); }
   .ieg-head .ieg-in {
     display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px;
     padding-top: clamp(28px, 4vw, 48px); padding-bottom: clamp(14px, 1.6vw, 20px);
@@ -115,6 +123,11 @@
     display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px;
     margin-bottom: clamp(24px, 3.4vw, 40px);
   }
+  /* 구역 제목 위의 짧은 막대: 빨강에서 노랑으로 끊어 잇는다 */
+  .ieg-sec-head h2::before {
+    content: ""; display: block; width: 28px; height: 4px; margin-bottom: 14px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--red) 0 60%, var(--amber) 60% 100%);
+  }
   .ieg-sec-head h2 {
     margin: 0; font-family: var(--font-display);
     font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.12; letter-spacing: -0.025em;
@@ -143,8 +156,11 @@
   .ieg-issue + .ieg-issue { margin-top: clamp(48px, 6vw, 72px); }
   .ieg-issue-label {
     margin: 0 0 14px; font-family: var(--font-display);
-    font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--muted);
+    font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
   }
+  /* 호 표시 앞의 노란 점 */
+  .ieg-issue-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
   .ieg-pages { display: flex; flex-direction: column; gap: clamp(20px, 2.6vw, 32px); }
   .ieg-sheet {
     display: block; width: 100%; padding: 0; border: 0; background: var(--canvas);
@@ -171,7 +187,7 @@
   }
   .ieg-row:hover::before, .ieg-row:hover + .ieg-row::before { opacity: 0; }
   /* 커서를 올리면 항목 전체가 연회색 면으로 떠오르고 제목이 강조색이 된다 */
-  .ieg-row:hover { background: var(--parch); }
+  .ieg-row:hover { background: var(--amber-soft); }
   .ieg-row:hover .ieg-title { color: var(--red); }
   .ieg-thumb {
     flex: 0 0 auto; display: block; overflow: hidden; border-radius: 8px; background: var(--parch);
@@ -184,7 +200,7 @@
     font-size: 14px; line-height: 1.29; letter-spacing: -0.016em; color: var(--muted);
   }
   .ieg-date { font-variant-numeric: tabular-nums; }
-  .ieg-media { font-weight: 600; color: var(--ink-80); }
+  .ieg-media { font-weight: 600; color: var(--red); }
   .ieg-tag { font-size: 12px; line-height: 1; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--hair); color: var(--muted); }
   .ieg-title {
     display: block; font-family: var(--font-display);
@@ -193,11 +209,14 @@
   }
 
   /* ── 꼬리말 ── */
-  .ieg-foot { background: var(--parch); border-top: 1px solid var(--hair); }
+  /* 꼬리말: 짙은 면(#333333) 위에 브랜드 띠, 제호의 NEWS는 노랑 */
+  .ieg-foot { background: var(--ink); }
+  .ieg-foot::before { content: ""; display: block; height: 4px; background: var(--brand-band); }
+  .ieg-foot-mark span { color: var(--amber); }
   .ieg-foot .ieg-in {
     display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px;
     padding-top: 22px; padding-bottom: 28px;
-    font-size: 12px; line-height: 1.33; letter-spacing: -0.01em; color: var(--muted-48);
+    font-size: 12px; line-height: 1.33; letter-spacing: -0.01em; color: rgba(255,255,255,0.72);
   }
 
   /* ── 오른쪽 날짜 게이지 (언론 보도의 연·월) ── */
@@ -211,7 +230,7 @@
   .ieg-rail-track { top: 0; bottom: 0; right: 14px; width: 2px; border-radius: 2px; background: #E5E5EA; }
   .ieg-rail-fill {
     position: absolute; top: 0; left: 0; right: 0; display: block; border-radius: 2px;
-    background: var(--red); transition: height .3s var(--ease);
+    background: linear-gradient(var(--red), var(--amber)); transition: height .3s var(--ease);
   }
   .ieg-rail-thumb {
     right: 10px; width: 10px; height: 10px; margin-top: -5px;
@@ -227,8 +246,8 @@
     border-radius: 50%; background: #C7C7CC;
     transition: transform .2s var(--ease), background .2s var(--ease);
   }
-  .ieg-tick.is-year .d { width: 8px; height: 8px; margin-top: -4px; right: 11px; background: #8E8E93; }
-  .ieg-tick.is-page .d { background: var(--ink); }
+  .ieg-tick.is-year .d { width: 8px; height: 8px; margin-top: -4px; right: 11px; background: var(--ink); }
+  .ieg-tick.is-page .d { background: var(--amber); }
   .ieg-tick:hover .d { background: var(--red); transform: scale(1.5); }
   .ieg-tick .lab {
     position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
@@ -238,9 +257,9 @@
     transition: color .2s var(--ease), background .2s var(--ease), opacity .2s var(--ease);
   }
   .ieg-tick.is-bare .lab { display: none; }
-  .ieg-tick .y { font-weight: 700; color: var(--ink-80); }
+  .ieg-tick .y { font-weight: 700; color: var(--ink); }
   .ieg-tick .y:empty, .ieg-tick .m:empty { display: none; }
-  .ieg-tick.is-page .lab { color: var(--ink-80); }
+  .ieg-tick.is-page .lab { color: var(--ink); }
   .ieg-tick:hover .lab, .ieg-tick:hover .y { color: var(--red); }
   .ieg-tick.is-cur .lab { background: var(--red); gap: 0; }
   .ieg-tick.is-cur .lab, .ieg-tick.is-cur .y { color: #FFFFFF; }
@@ -379,7 +398,7 @@
 
   <footer class="ieg-foot">
     <div class="ieg-in">
-      <span>IEG NEWS</span>
+      <span class="ieg-foot-mark">IEG<span> NEWS</span></span>
       <span>주식회사 아이지 · TECH-EDU</span>
     </div>
   </footer>

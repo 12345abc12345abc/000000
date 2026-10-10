@@ -48,35 +48,41 @@
     /* 본문 칼럼(최대 1160px) 바깥 여백의 폭 */
     --gut: max(clamp(20px, 5vw, 64px), calc((100vw - 1160px) / 2));
   }
-  /* 배경: 브랜드 색 빛이 크게 번지며 아주 천천히 움직이고(오로라), 여백에는 고운 점 격자를 깐다 */
+  /* 배경: 빛의 입자. 금빛 입자들이 세 겹으로 깊이를 두고 아주 천천히 떠오르고, 몇 개는 반짝이며,
+     화면 위쪽과 가장자리에 따뜻한 빛이 감돈다. 사물(행성·별자리 등)을 그리지 않고 빛만으로 느낌을 낸다.
+     입자는 여백에서 살아나고 읽는 칼럼 쪽은 마스크로 거의 지운다. */
   .ieg-bg > i { position: absolute; display: block; }
-  .ieg-glow { border-radius: 50%; }
-  .ieg-glow.a1 {
-    width: 58vw; height: 58vw; left: -20vw; top: -26vw;
-    background: radial-gradient(circle, rgba(255,179,0,.30), rgba(255,179,0,0) 66%);
-    animation: iegAu1 40s ease-in-out infinite alternate;
-  }
-  .ieg-glow.a2 {
-    width: 48vw; height: 48vw; right: -18vw; top: 24vh;
-    background: radial-gradient(circle, rgba(255,0,0,.16), rgba(255,0,0,0) 66%);
-    animation: iegAu2 52s ease-in-out infinite alternate;
-  }
-  .ieg-glow.a3 {
-    width: 44vw; height: 44vw; left: -10vw; bottom: -24vw;
-    background: radial-gradient(circle, rgba(255,120,40,.18), rgba(255,120,40,0) 66%);
-    animation: iegAu3 46s ease-in-out infinite alternate;
-  }
-  @keyframes iegAu1 { to { transform: translate(6vw, 4vw) scale(1.08); } }
-  @keyframes iegAu2 { to { transform: translate(-5vw, -6vh) scale(1.12); } }
-  @keyframes iegAu3 { to { transform: translate(7vw, -3vw) scale(.94); } }
-  .ieg-dots {
+  .ieg-light {
     inset: 0;
-    background: radial-gradient(circle at 1px 1px, rgba(51,51,51,.18) 1px, transparent 1.6px) 0 0 / 22px 22px;
-    -webkit-mask-image: linear-gradient(90deg, #000 0, transparent calc(var(--gut) + 1vw),
-      transparent calc(100% - var(--gut) - 1vw), #000 100%);
-    mask-image: linear-gradient(90deg, #000 0, transparent calc(var(--gut) + 1vw),
-      transparent calc(100% - var(--gut) - 1vw), #000 100%);
+    background:
+      radial-gradient(60% 46% at 50% -12%, rgba(255,214,120,.30), transparent 72%),
+      radial-gradient(26% 44% at 0% 58%, rgba(255,179,0,.18), transparent 72%),
+      radial-gradient(24% 40% at 100% 34%, rgba(255,150,60,.16), transparent 72%),
+      radial-gradient(22% 30% at 98% 92%, rgba(255,40,0,.07), transparent 72%);
   }
+  .ieg-motes {
+    position: absolute; inset: 0; display: block;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, rgba(0,0,0,0.08) calc(var(--gut) + 3vw),
+      rgba(0,0,0,0.08) calc(100% - var(--gut) - 3vw), #000 100%);
+    mask-image: linear-gradient(90deg, #000 0, rgba(0,0,0,0.08) calc(var(--gut) + 3vw),
+      rgba(0,0,0,0.08) calc(100% - var(--gut) - 3vw), #000 100%);
+  }
+  /* 입자 겹: 타일 한 장 높이만큼 올라갔다가 이어 붙으므로 끊김 없이 흐른다. 가까운 겹일수록 크고 빠르다. */
+  .ieg-motes > i { position: absolute; left: 0; right: 0; top: 0; display: block; background-repeat: repeat;
+    animation-timing-function: linear; animation-iteration-count: infinite; }
+  .ieg-motes .l1 { bottom: -420px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.28' stop-color='%23FFC640'/%3E%3Cstop offset='1' stop-color='%23FFB300' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='h'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.3' stop-color='%23FF5A3C'/%3E%3Cstop offset='1' stop-color='%23FF0000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='283.2' cy='373' r='1.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='141.6' cy='355.4' r='1.9' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='87.7' cy='263.6' r='1.4' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='325.2' cy='120.5' r='1.9' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='246.5' cy='8.7' r='1.8' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='134.1' cy='247.2' r='1.1' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='210.3' cy='136.5' r='1.1' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='105.3' cy='338.1' r='1.3' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='310.5' cy='273.7' r='2' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='261.9' cy='197.7' r='1.8' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='35.7' cy='70.9' r='2' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='196.6' cy='310.9' r='1.6' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='140.6' cy='60.4' r='1.1' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='97' cy='81.3' r='1.3' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='158.4' cy='410.9' r='1.7' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='396.4' cy='387.6' r='1.8' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='272.9' cy='144.7' r='2' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='137.2' cy='297.2' r='1.7' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='304.7' cy='79' r='1.2' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='184.2' cy='103.7' r='1.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='14.7' cy='382.4' r='1.7' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='315.8' cy='342.1' r='1.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='182.8' cy='293.3' r='1.6' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='363.2' cy='17.9' r='1.5' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='90.9' cy='42.1' r='1.7' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='28.7' cy='287.8' r='1.9' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='243.1' cy='196.6' r='2' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='94.1' cy='72' r='1.4' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='406' cy='374.5' r='1.8' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='39.4' cy='59.3' r='1.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='295.2' cy='155' r='2' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='31.5' cy='131.4' r='1.8' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='385.3' cy='161.7' r='1.4' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='209.3' cy='306.1' r='1.6' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='42.1' cy='65.7' r='1.6' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='409.7' cy='372' r='1.3' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='251.4' cy='68.8' r='1.6' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='32.9' cy='108.2' r='1.4' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='341.8' cy='83.7' r='1.4' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='223.9' cy='374.9' r='1.7' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='326.7' cy='336.5' r='1.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='74.5' cy='184.7' r='1.8' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='273.3' cy='338.6' r='1.1' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='24.2' cy='148.3' r='1.8' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='235' cy='301.2' r='1.3' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='140' cy='57.4' r='1.8' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='369.4' cy='308.5' r='1.3' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='143.8' cy='230.6' r='1.3' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='223' cy='221.8' r='1.2' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='73.9' cy='396.4' r='1.3' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='59' cy='321.3' r='1.5' fill='url(%23h)' fill-opacity='0.8'/%3E%3Ccircle cx='383.9' cy='266.9' r='1.3' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='400' cy='339.3' r='1.7' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='108.2' cy='353.3' r='1.9' fill='url(%23g)' fill-opacity='0.9'/%3E%3Ccircle cx='230.8' cy='68.1' r='1.9' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='363' cy='72.1' r='1.2' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='179.3' cy='185.9' r='1.7' fill='url(%23g)' fill-opacity='0.5'/%3E%3Ccircle cx='74.6' cy='299.4' r='1.6' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='405.5' cy='201.1' r='2' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='264.7' cy='82.5' r='1.7' fill='url(%23g)' fill-opacity='0.9'/%3E%3C/svg%3E"); background-size: 420px 420px; animation-name: iegUp1; animation-duration: 150s; }
+  .ieg-motes .l2 { bottom: -720px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.28' stop-color='%23FFC640'/%3E%3Cstop offset='1' stop-color='%23FFB300' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='h'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.3' stop-color='%23FF5A3C'/%3E%3Cstop offset='1' stop-color='%23FF0000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='479.9' cy='628.4' r='3.8' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='688.1' cy='538.2' r='3.8' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='234.5' cy='705' r='4.5' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='171.3' cy='288.3' r='3.3' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='406.7' cy='515.4' r='3.8' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='87.4' cy='691.4' r='4.5' fill='url(%23g)' fill-opacity='0.6'/%3E%3Ccircle cx='507.7' cy='479' r='3.1' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='151.3' cy='542.7' r='3.9' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='245.2' cy='417.2' r='3.9' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='661.4' cy='498.6' r='4.5' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='589.8' cy='367.4' r='3.6' fill='url(%23g)' fill-opacity='0.9'/%3E%3Ccircle cx='145.5' cy='32.2' r='3.3' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='414.8' cy='652.8' r='3.6' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='438.3' cy='609.3' r='3.6' fill='url(%23g)' fill-opacity='0.7'/%3E%3Ccircle cx='498.7' cy='90' r='3.1' fill='url(%23g)' fill-opacity='0.8'/%3E%3Ccircle cx='173.1' cy='455.9' r='4.5' fill='url(%23g)' fill-opacity='0.9'/%3E%3Ccircle cx='154.2' cy='413.9' r='3.8' fill='url(%23g)' fill-opacity='0.9'/%3E%3Ccircle cx='434.6' cy='637' r='4.3' fill='url(%23h)' fill-opacity='0.8'/%3E%3C/svg%3E"); background-size: 720px 720px; animation-name: iegUp2; animation-duration: 100s; }
+  .ieg-motes .l3 { bottom: -980px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='980' height='980'%3E%3Cdefs%3E%3CradialGradient id='g'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.28' stop-color='%23FFC640'/%3E%3Cstop offset='1' stop-color='%23FFB300' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='h'%3E%3Cstop offset='0' stop-color='%23FFFFFF'/%3E%3Cstop offset='.3' stop-color='%23FF5A3C'/%3E%3Cstop offset='1' stop-color='%23FF0000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='420.9' cy='65.4' r='16.4' fill='url(%23g)' fill-opacity='0.4'/%3E%3Ccircle cx='466.9' cy='241.8' r='13.7' fill='url(%23g)' fill-opacity='0.3'/%3E%3Ccircle cx='820.9' cy='485.5' r='11.2' fill='url(%23g)' fill-opacity='0.3'/%3E%3Ccircle cx='335.9' cy='464.2' r='12.6' fill='url(%23h)' fill-opacity='0.3'/%3E%3Ccircle cx='939.5' cy='677.7' r='12.9' fill='url(%23g)' fill-opacity='0.4'/%3E%3Ccircle cx='269' cy='216' r='13' fill='url(%23g)' fill-opacity='0.3'/%3E%3C/svg%3E"); background-size: 980px 980px; animation-name: iegUp3; animation-duration: 70s; opacity: .8; }
+  @keyframes iegUp1 { to { transform: translateY(-420px); } }
+  @keyframes iegUp2 { to { transform: translateY(-720px); } }
+  @keyframes iegUp3 { to { transform: translateY(-980px); } }
+  /* 반짝임: 네 갈래 빛이 천천히 켜졌다 꺼진다 */
+  .ieg-sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ieg-sky .tw { transform-box: fill-box; transform-origin: center; animation: iegTwinkle 5s ease-in-out infinite; }
+  .ieg-sky .tw.k { fill: #FFFFFF; filter: drop-shadow(0 0 3px rgba(255,179,0,.95)) drop-shadow(0 0 8px rgba(255,179,0,.5)); }
+  .ieg-sky .tw.a { fill: #FFE7A6; filter: drop-shadow(0 0 4px rgba(255,179,0,.95)); }
+  .ieg-sky .tw.r { fill: #FFD0C4; filter: drop-shadow(0 0 4px rgba(255,40,0,.8)); }
+  @keyframes iegTwinkle { 0%, 100% { opacity: .2; transform: scale(.5) rotate(0deg); } 50% { opacity: 1; transform: scale(1.2) rotate(45deg); } }
 
   /* 본문 래퍼. 배경(z-index:0) 위에 올라온다. 게이지는 이 상자의 높이 변화를 보고 위치를 다시 잰다. */
   .ieg-wrap { position: relative; z-index: 1; min-height: 100vh; padding: 0 clamp(20px, 5vw, 64px); }
@@ -352,10 +358,11 @@
 </helmet>
 <!-- 배경. 본문 래퍼(z-index:1) 바깥에 있어야 글자를 덮지 않는다. -->
 <div class="ieg-bg" aria-hidden="true">
-  <i class="ieg-glow a1"></i>
-  <i class="ieg-glow a2"></i>
-  <i class="ieg-glow a3"></i>
-  <i class="ieg-dots"></i>
+  <i class="ieg-light"></i>
+  <div class="ieg-motes"><i class="l1"></i><i class="l2"></i><i class="l3"></i>
+  <svg class="ieg-sky" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+    <g><g transform="translate(276.3 1024.3)"><path class="tw r" d="M 0 -5 Q 0.9 -0.9 5 0 Q 0.9 0.9 0 5 Q -0.9 0.9 -5 0 Q -0.9 -0.9 0 -5 Z" style="animation-duration:5.9s;animation-delay:-5.3s"></path></g><g transform="translate(281.3 138.7)"><path class="tw k" d="M 0 -6.3 Q 1.1 -1.1 6.3 0 Q 1.1 1.1 0 6.3 Q -1.1 1.1 -6.3 0 Q -1.1 -1.1 0 -6.3 Z" style="animation-duration:4.2s;animation-delay:-4.6s"></path></g><g transform="translate(264.8 221.7)"><path class="tw r" d="M 0 -7.2 Q 1.3 -1.3 7.2 0 Q 1.3 1.3 0 7.2 Q -1.3 1.3 -7.2 0 Q -1.3 -1.3 0 -7.2 Z" style="animation-duration:5.3s;animation-delay:-6.3s"></path></g><g transform="translate(114.7 382.8)"><path class="tw a" d="M 0 -6.2 Q 1.1 -1.1 6.2 0 Q 1.1 1.1 0 6.2 Q -1.1 1.1 -6.2 0 Q -1.1 -1.1 0 -6.2 Z" style="animation-duration:4.1s;animation-delay:0s"></path></g><g transform="translate(341.7 619.1)"><path class="tw k" d="M 0 -4.6 Q 0.8 -0.8 4.6 0 Q 0.8 0.8 0 4.6 Q -0.8 0.8 -4.6 0 Q -0.8 -0.8 0 -4.6 Z" style="animation-duration:6.2s;animation-delay:-4.4s"></path></g><g transform="translate(263.8 953.2)"><path class="tw k" d="M 0 -6.1 Q 1.1 -1.1 6.1 0 Q 1.1 1.1 0 6.1 Q -1.1 1.1 -6.1 0 Q -1.1 -1.1 0 -6.1 Z" style="animation-duration:6.3s;animation-delay:-4.6s"></path></g><g transform="translate(22.6 273.1)"><path class="tw r" d="M 0 -6.1 Q 1.1 -1.1 6.1 0 Q 1.1 1.1 0 6.1 Q -1.1 1.1 -6.1 0 Q -1.1 -1.1 0 -6.1 Z" style="animation-duration:5.6s;animation-delay:-6.3s"></path></g><g transform="translate(1850 260.5)"><path class="tw k" d="M 0 -5.2 Q 0.9 -0.9 5.2 0 Q 0.9 0.9 0 5.2 Q -0.9 0.9 -5.2 0 Q -0.9 -0.9 0 -5.2 Z" style="animation-duration:6.9s;animation-delay:-3.7s"></path></g><g transform="translate(1746.2 441.3)"><path class="tw k" d="M 0 -5.4 Q 1 -1 5.4 0 Q 1 1 0 5.4 Q -1 1 -5.4 0 Q -1 -1 0 -5.4 Z" style="animation-duration:6.7s;animation-delay:-6s"></path></g><g transform="translate(1558.8 420)"><path class="tw k" d="M 0 -5.7 Q 1 -1 5.7 0 Q 1 1 0 5.7 Q -1 1 -5.7 0 Q -1 -1 0 -5.7 Z" style="animation-duration:4.8s;animation-delay:-1.6s"></path></g><g transform="translate(1635.7 476.1)"><path class="tw r" d="M 0 -5.6 Q 1 -1 5.6 0 Q 1 1 0 5.6 Q -1 1 -5.6 0 Q -1 -1 0 -5.6 Z" style="animation-duration:4.8s;animation-delay:-1.4s"></path></g><g transform="translate(1772.9 184.3)"><path class="tw a" d="M 0 -5.6 Q 1 -1 5.6 0 Q 1 1 0 5.6 Q -1 1 -5.6 0 Q -1 -1 0 -5.6 Z" style="animation-duration:5.8s;animation-delay:-0.8s"></path></g><g transform="translate(1864.3 536.5)"><path class="tw k" d="M 0 -6.5 Q 1.2 -1.2 6.5 0 Q 1.2 1.2 0 6.5 Q -1.2 1.2 -6.5 0 Q -1.2 -1.2 0 -6.5 Z" style="animation-duration:4.9s;animation-delay:-2.9s"></path></g><g transform="translate(1896.9 234.4)"><path class="tw k" d="M 0 -7.7 Q 1.4 -1.4 7.7 0 Q 1.4 1.4 0 7.7 Q -1.4 1.4 -7.7 0 Q -1.4 -1.4 0 -7.7 Z" style="animation-duration:6.8s;animation-delay:-4.5s"></path></g></g>
+  </svg></div>
 </div>
 <div class="ieg-wrap">
   <div class="ieg-paper">

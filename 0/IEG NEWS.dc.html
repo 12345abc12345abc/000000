@@ -909,7 +909,8 @@ class Component extends DCLogic {
       linkNlClass: s.view === 'newsletter' ? 'ieg-link is-on' : 'ieg-link',
       linkPressClass: s.view === 'press' ? 'ieg-link is-on' : 'ieg-link',
       latestIssue: ISSUES.slice(0, 1).map(issue),
-      allIssues: ISSUES.map(issue),
+      // 소식지 페이지는 장수와 상관없이 한 줄로 쭉(한 장씩 위아래로) 내려가며 본다
+      allIssues: ISSUES.map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
       cards: featured.map(card),
       items: slice.map(card),
       pages,

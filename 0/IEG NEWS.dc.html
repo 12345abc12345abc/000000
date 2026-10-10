@@ -67,10 +67,7 @@
   @keyframes iegFromR   { from { opacity: 0; translate: 36px 0; } to { opacity: 1; translate: 0 0; } }
   @keyframes iegPop     { from { scale: 0; } 70% { scale: 1.5; } to { scale: 1; } }
   @keyframes iegPar     { from { scale: 1.14; translate: 0 -6%; } to { scale: 1.14; translate: 0 6%; } }
-  @keyframes iegNavIn   { from { height: var(--nav-h); } to { height: 68px; } }
   @supports (animation-timeline: view()) {
-    /* 머리 막대: 내리면 조금 얇아진다(맨 위로 오면 원래대로). 제호 크기는 바꾸지 않는다(위아래 제호가 늘 같게). */
-    .ieg-nav .ieg-in { animation: iegNavIn linear both; animation-timeline: scroll(root); animation-range: 0 160px; }
     /* 구역 제목은 왼쪽에서, 안내 문구는 오른쪽에서 들어온다 */
     .ieg-sec-head h2 { animation: iegFromL linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     .ieg-sec-head .ieg-note { animation: iegFromR linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }

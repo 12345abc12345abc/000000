@@ -86,7 +86,8 @@
   /* 본문 래퍼. 게이지는 이 상자의 높이 변화를 보고 위치를 다시 잰다. */
   .ieg-wrap { position: relative; min-height: 100vh; }
   /* 안쪽 칼럼: 글이 많은 화면의 Apple 폭(980px) */
-  .ieg-in { box-sizing: border-box; max-width: 1240px; margin: 0 auto; padding: 0 22px; }
+  /* 안쪽 칼럼: 화면 전체 폭을 쓰고 양옆에 작은 여백만 둔다 */
+  .ieg-in { box-sizing: border-box; width: 100%; margin: 0 auto; padding: 0 clamp(20px, 3vw, 56px); }
 
   /* 머리 막대: 제호 + 두 구역 바로가기. 늘 화면 위에 붙어 있어 어디서든 바로 옮겨 간다. */
   .ieg-nav {
@@ -185,7 +186,7 @@
 
   /* 언론 보도 패널: 맨 위 최신 기사는 큰 사진과 큰 제목으로, 나머지는 촘촘한 줄로 */
   .ieg-lead {
-    display: grid; grid-template-columns: min(46%, 300px) minmax(0, 1fr); gap: 18px; align-items: center;
+    display: grid; grid-template-columns: min(44%, 340px) minmax(0, 1fr); gap: 20px; align-items: center;
     padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--hair); color: var(--ink);
   }
   .ieg-lead-img {
@@ -226,12 +227,20 @@
     .ieg-home-press .ieg-row { padding-top: 9px; padding-bottom: 9px; }
     .ieg-home-press .ieg-meta { font-size: 13px; margin-bottom: 3px; }
   }
-  /* 화면이 낮으면 줄 수를 줄여 한 화면을 넘지 않게 한다(큰 기사 1 + 줄 7/5/3) */
+  /* 화면이 낮으면 줄 수를 줄여 한 화면을 넘지 않게 한다(큰 기사 1 + 줄 7/6/5/3) */
   @media (max-width: 1023px) { .ieg-home-press .ieg-row:nth-child(n+6) { display: none; } }
+  @media (min-width: 1024px) and (max-height: 1120px) { .ieg-home-press .ieg-row:nth-child(n+7) { display: none; } }
   @media (min-width: 1024px) and (max-height: 1000px) { .ieg-home-press .ieg-row:nth-child(n+6) { display: none; } }
   @media (min-width: 1024px) and (max-height: 820px) { .ieg-home-press .ieg-row:nth-child(n+4) { display: none; } }
   /* 언론 보도 페이지의 전체 목록 */
   .ieg-list { margin: 0; }
+  /* 언론 보도 페이지는 오른쪽 날짜 게이지 자리를 비워 둔다 */
+  @media (min-width: 900px) { .ieg-press-page .ieg-in { padding-right: max(clamp(20px, 3vw, 56px), 150px); } }
+  /* 넓은 화면에서는 목록을 두 줄로 나란히(최신이 왼쪽 위, 오른쪽, 그 아래 순서) */
+  @media (min-width: 1280px) {
+    .ieg-press-page .ieg-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(32px, 3vw, 56px); }
+    .ieg-press-page .ieg-row:nth-child(2)::before { display: none; }
+  }
   /* 소식지·언론 보도 페이지는 내용이 짧아도 화면을 채워 꼬리말이 중간에 뜨지 않게 한다 */
   .ieg-page { min-height: calc(100vh - var(--nav-h)); box-sizing: border-box; }
   /* 페이지 번호: 알약 버튼, 지금 페이지는 짙게 채운다 */
@@ -482,7 +491,7 @@
 
   <!-- ── 언론 보도 페이지: 전체 기사를 날짜순으로, PER_PAGE건씩 페이지를 나눈다 ── -->
   <sc-if value="{{ isPressPage }}" hint-placeholder-val="{{ false }}">
-  <section class="ieg-tile ieg-page">
+  <section class="ieg-tile ieg-page ieg-press-page">
     <div class="ieg-in">
       <div class="ieg-sec-head">
         <h2>언론 보도</h2>

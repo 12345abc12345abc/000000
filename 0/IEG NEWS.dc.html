@@ -67,14 +67,12 @@
   @keyframes iegSheetIn { from { opacity: 0; scale: .9; translate: 0 64px; } to { opacity: 1; scale: 1; translate: 0 0; } }
   @keyframes iegFromL   { from { opacity: 0; translate: -36px 0; } to { opacity: 1; translate: 0 0; } }
   @keyframes iegFromR   { from { opacity: 0; translate: 36px 0; } to { opacity: 1; translate: 0 0; } }
-  @keyframes iegPop     { from { scale: 0; } 70% { scale: 1.5; } to { scale: 1; } }
   @keyframes iegPar     { from { scale: 1.14; translate: 0 -6%; } to { scale: 1.14; translate: 0 6%; } }
   @supports (animation-timeline: view()) {
     /* 구역 제목은 왼쪽에서, 안내 문구는 오른쪽에서 들어온다 */
     .ieg-sec-head h2 { animation: iegFromL linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     .ieg-sec-head .ieg-note { animation: iegFromR linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     /* 호 표시 앞 노란 점이 톡 튀어나온다 */
-    .ieg-issue-label::before { animation: iegPop linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     /* 소식지 지면: 들어오면서 살짝 작고 아래에 있다가 제 크기로 떠오른다 */
     .ieg-sheet { animation: iegSheetIn linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
     /* 언론 보도 목록 줄: 아래에서 떠오르고, 화면 안에 다 들어오면 완성된 모습이다(첫 화면에서 흐리게 남지 않게) */
@@ -155,13 +153,15 @@
      두 장 이상인 호는 두 장씩 나란히(장당 최대 480px) 놓는다. 누르면 확대 보기에서 더 크게 읽는다. */
   .ieg-issue { display: flex; flex-direction: column; align-items: center; }
   .ieg-issue + .ieg-issue { margin-top: clamp(48px, 6vw, 72px); }
+  /* 호 표시: 신문 날짜 줄처럼 — 양옆으로 가는 선이 뻗고, 가운데 연도는 작게, 월은 크고 굵게 */
   .ieg-issue-label {
-    margin: 0 0 14px; font-family: var(--font-display);
-    font-size: 17px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--ink);
-    display: flex; align-items: center; gap: 8px;
+    align-self: stretch; margin: 0 0 16px;
+    display: flex; align-items: center; gap: 16px;
+    font-family: var(--font-display); font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink);
   }
-  /* 호 표시 앞의 노란 점 */
-  .ieg-issue-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+  .ieg-issue-label::before, .ieg-issue-label::after { content: ""; flex: 1 1 0; height: 1px; background: rgba(0,0,0,0.16); }
+  .ieg-issue-y { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; color: var(--muted); }
+  .ieg-issue-m { margin-left: 4px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
   .ieg-pages { display: grid; justify-content: center; gap: clamp(20px, 2.6vw, 32px); width: 100%; }
   .ieg-pages.is-n1 { grid-template-columns: minmax(0, 720px); }
   .ieg-pages.is-n2 { grid-template-columns: repeat(2, minmax(0, 480px)); }
@@ -170,9 +170,9 @@
     position: relative; overflow: hidden;
     display: block; width: 100%; padding: 0; border: 0; background: var(--canvas);
     box-shadow: var(--shadow-photo); cursor: zoom-in;
-    transition: transform .4s var(--ease), box-shadow .5s var(--ease);
+    transition: transform .4s var(--ease);
   }
-  /* 커서를 올리면 지면 위로 빛줄기가 '샤악' 한 번 스치고, 둘레에 따뜻한 빛이 번진다 */
+  /* 커서를 올리면 지면 위로 빛줄기가 '샤악' 한 번 스친다(테두리·둘레 빛은 넣지 않는다) */
   .ieg-sheet::after {
     content: ""; position: absolute; top: -10%; bottom: -10%; left: -60%; width: 55%; pointer-events: none;
     background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 30%,
@@ -181,10 +181,7 @@
   }
   .ieg-sheet:hover::after { animation: iegShine .85s cubic-bezier(.3,.6,.3,1) both; }
   @keyframes iegShine { 0% { left: -60%; opacity: 1; } 100% { left: 115%; opacity: 1; } }
-  .ieg-sheet:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-photo), 0 0 0 1px rgba(255,179,0,0.35), 0 0 42px rgba(255,179,0,0.32);
-  }
+  .ieg-sheet:hover { transform: translateY(-4px); }
   .ieg-sheet:active { transform: scale(0.99); }
   .ieg-sheet img { display: block; width: 100%; height: auto; }
 
@@ -204,52 +201,40 @@
   .ieg-home .ieg-note { flex: 0 1 auto; }
   /* 두 패널(소식지·언론 보도)은 같은 흰 면·같은 모양이다. 소식지 지면은 그 위에 사진처럼 놓인다. */
 
-  /* 언론 보도 패널은 신문 1면처럼 짠다:
-     왼쪽 머리기사(큰 사진 + 큰 제목), 오른쪽 주요 기사 제목 세 꼭지(가는 세로선으로 나눔), 아래 사진 기사 줄.
-     제목은 자르지 않는다. */
-  .ieg-front { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .ieg-lead { display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+  /* 언론 보도 패널: 가장 최신 기사 하나는 위에 크게(사진 + 큰 제목),
+     나머지는 모두 같은 모양의 카드(사진 · 날짜와 매체 · 제목)를 고르게 줄 세운다. 제목은 자르지 않는다. */
+  .ieg-lead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: center; color: var(--ink); }
+  @media (min-width: 640px) { .ieg-lead { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; } }
   .ieg-lead-img {
     position: relative; display: block; overflow: clip; border-radius: 12px; background: var(--parch);
-    aspect-ratio: 16 / 9; min-height: 0; margin-bottom: 8px;
+    aspect-ratio: 16 / 9; min-height: 0;
   }
   .ieg-lead-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
   .ieg-lead:hover .ieg-lead-img img { transform: scale(1.04); }
+  .ieg-lead-text { display: flex; flex-direction: column; gap: 8px; }
   .ieg-lead .ieg-meta { margin-bottom: 0; }
   .ieg-lead-title {
     display: block;
     font-family: var(--font-display); font-size: clamp(21px, 2vw, 27px); font-weight: 700; line-height: 1.28; letter-spacing: -0.035em;
     transition: color .2s var(--ease);
   }
-  .ieg-side { display: flex; flex-direction: column; }
-  .ieg-side-item { display: block; padding: 14px 0; border-top: 1px solid var(--hair); color: var(--ink); }
-  .ieg-side-item:first-child { padding-top: 0; border-top: 0; }
-  .ieg-side-item .ieg-meta { font-size: 13px; margin-bottom: 4px; }
-  .ieg-side-title {
-    display: block; font-family: var(--font-display);
-    font-size: 16px; font-weight: 600; line-height: 1.42; letter-spacing: -0.022em; transition: color .2s var(--ease);
-  }
   .ieg-stories {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px;
     margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--hair);
   }
+  @media (min-width: 640px) { .ieg-stories { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .ieg-story { display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
   .ieg-story-img {
     position: relative; display: block; overflow: clip; border-radius: 10px; background: var(--parch);
-    aspect-ratio: 16 / 10; min-height: 0; margin-bottom: 4px;
+    aspect-ratio: 16 / 9; min-height: 0; margin-bottom: 4px;
   }
   .ieg-story-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
   .ieg-story:hover .ieg-story-img img { transform: scale(1.05); }
   .ieg-story .ieg-meta { font-size: 13px; margin-bottom: 0; }
   .ieg-story-title { display: block; font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: -0.02em; transition: color .2s var(--ease); }
-  .ieg-lead:hover .ieg-lead-title, .ieg-side-item:hover .ieg-side-title, .ieg-story:hover .ieg-story-title { color: var(--red); }
+  .ieg-lead:hover .ieg-lead-title, .ieg-story:hover .ieg-story-title { color: var(--red); }
   /* 한국어 제목은 낱말 중간에서 끊지 않는다 */
-  .ieg-lead-title, .ieg-side-title, .ieg-story-title, .ieg-title { word-break: keep-all; overflow-wrap: anywhere; }
-  /* 사진 기사는 휴대폰에서 2×2, 그보다 넓으면 한 줄에 셋 */
-  @media (min-width: 640px) {
-    .ieg-stories { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .ieg-stories .ieg-story:nth-child(n+4) { display: none; }
-  }
+  .ieg-lead-title, .ieg-story-title, .ieg-title { word-break: keep-all; overflow-wrap: anywhere; }
   .ieg-panel .ieg-thumb { width: 96px; }
   .ieg-panel .ieg-title {
     font-size: 16px; line-height: 1.38;
@@ -269,21 +254,17 @@
     .ieg-home .ieg-pages { display: flex; justify-content: center; gap: 16px; }
     .ieg-home .ieg-sheet { flex: 0 1 auto; width: auto; }
     .ieg-home .ieg-sheet img { width: auto; height: auto; max-width: 100%; max-height: var(--nl-h); }
-    /* 머리기사 | 주요 기사: 가운데 가는 세로선(신문 단 나눔) */
-    .ieg-front { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; }
-    .ieg-lead { padding-right: 22px; }
-    .ieg-side { padding-left: 22px; border-left: 1px solid var(--hair); }
   }
-  /* 화면이 낮으면(높이 890px 미만) 사진을 납작하게, 간격을 좁게 해서 한 화면 안에 넣는다 */
-  @media (min-width: 1024px) and (max-height: 889px) {
+  /* 한 화면에 들어오게: 높이 1000px 미만이면 사진을 납작하게·간격을 좁게 해서 카드 두 줄(6건)을 넣고,
+     높이 880px 미만이면 카드 한 줄(3건)만 둔다. */
+  @media (min-width: 1024px) and (max-height: 999px) {
     .ieg-lead-img { aspect-ratio: 2 / 1; }
-    .ieg-stories { margin-top: 12px; padding-top: 12px; gap: 12px; }
+    .ieg-stories { margin-top: 14px; padding-top: 14px; row-gap: 14px; }
     .ieg-story { gap: 4px; }
-    .ieg-story-img { aspect-ratio: 21 / 9; }
+    .ieg-story-img { aspect-ratio: 21 / 9; margin-bottom: 2px; }
     .ieg-story-title { font-size: 14px; }
-    .ieg-side-item { padding: 10px 0; }
   }
-  /* 언론 보도 페이지의 전체 목록 */
+  @media (min-width: 1024px) and (max-height: 879px) { .ieg-stories .ieg-story:nth-child(n+4) { display: none; } }  /* 언론 보도 페이지의 전체 목록 */
   .ieg-list { margin: 0; }
   /* 소식지·언론 보도 페이지는 내용이 짧아도 화면을 채워 꼬리말이 중간에 뜨지 않게 한다 */
   .ieg-page { min-height: calc(100vh - var(--nav-h)); box-sizing: border-box; padding-top: 24px; }
@@ -461,7 +442,7 @@
         </div>
         <sc-for list="{{ latestIssue }}" as="g" hint-placeholder-count="1">
           <article class="ieg-issue">
-            <p class="ieg-issue-label">{{ g.issue }}</p>
+            <p class="ieg-issue-label"><span><span class="ieg-issue-y">{{ g.year }}.</span><span class="ieg-issue-m">{{ g.month }}</span></span></p>
             <!-- 지면 한 장이 버튼 하나라, 누른 면이 그대로 확대 보기에 뜬다. -->
             <div class="{{ g.pagesClass }}">
               <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="1">
@@ -481,26 +462,18 @@
             <h2>언론 보도</h2>
             <p class="ieg-note">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
           </div>
-          <!-- 신문 1면처럼: 왼쪽 머리기사, 오른쪽 주요 기사 제목, 아래 사진 기사 -->
-          <div class="ieg-front">
-            <sc-for list="{{ lead }}" as="item" hint-placeholder-count="1">
-              <a class="ieg-lead" href="{{ item.url }}" target="_blank" rel="noopener">
-                <span class="ieg-lead-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
+          <!-- 가장 최신 기사 하나는 위에 크게, 나머지는 모두 같은 모양의 카드로 -->
+          <sc-for list="{{ lead }}" as="item" hint-placeholder-count="1">
+            <a class="ieg-lead" href="{{ item.url }}" target="_blank" rel="noopener">
+              <span class="ieg-lead-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
+              <span class="ieg-lead-text">
                 <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
                 <span class="ieg-lead-title">{{ item.title }}</span>
-              </a>
-            </sc-for>
-            <div class="ieg-side">
-              <sc-for list="{{ side }}" as="item" hint-placeholder-count="3">
-                <a class="ieg-side-item" href="{{ item.url }}" target="_blank" rel="noopener">
-                  <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
-                  <span class="ieg-side-title">{{ item.title }}</span>
-                </a>
-              </sc-for>
-            </div>
-          </div>
+              </span>
+            </a>
+          </sc-for>
           <div class="ieg-stories">
-            <sc-for list="{{ stories }}" as="item" hint-placeholder-count="4">
+            <sc-for list="{{ stories }}" as="item" hint-placeholder-count="6">
               <a class="ieg-story" href="{{ item.url }}" target="_blank" rel="noopener">
                 <span class="ieg-story-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
                 <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
@@ -526,7 +499,7 @@
       </div>
       <sc-for list="{{ allIssues }}" as="g" hint-placeholder-count="2">
         <article class="ieg-issue">
-          <p class="ieg-issue-label">{{ g.issue }}</p>
+          <p class="ieg-issue-label"><span><span class="ieg-issue-y">{{ g.year }}.</span><span class="ieg-issue-m">{{ g.month }}</span></span></p>
           <div class="{{ g.pagesClass }}">
             <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="1">
               <button class="ieg-sheet" onClick="{{ p.open }}" aria-label="{{ p.alt }}">
@@ -1134,6 +1107,9 @@ class Component extends DCLogic {
     // 소식지 호. 확대 보기는 어느 화면에서 열든 전체 면을 차례로 넘긴다.
     const issue = (g, gi) => ({
       issue: g.issue,
+      // 호 표시는 연도(작게)와 월(크게)로 나눠 보인다: '2026. 09' -> '2026', '09'
+      year: g.issue.split('.')[0].trim(),
+      month: (g.issue.split('.')[1] || '').trim(),
       // 한 장짜리 호는 크게 한 장, 두 장 이상은 두 장씩 나란히
       pagesClass: 'ieg-pages is-n' + Math.min(g.pages.length, 2),
       previews: g.pages.map((p, pi) => ({
@@ -1153,10 +1129,9 @@ class Component extends DCLogic {
       latestIssue: ISSUES.slice(0, 1).map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
       // 소식지 페이지는 장수와 상관없이 한 줄로 쭉(한 장씩 위아래로) 내려가며 본다
       allIssues: ISSUES.map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
-      // 신문 1면: 머리기사 1, 주요 기사 제목 3, 사진 기사 4(넓은 화면은 3만 보인다)
+      // 가장 최신 기사 하나는 크게, 나머지 6건은 같은 모양의 카드로(화면 높이에 따라 3건 또는 6건이 보인다)
       lead: featured.slice(0, 1).map(card),
-      side: featured.slice(1, 4).map(card),
-      stories: featured.slice(4, 8).map(card),
+      stories: featured.slice(1, 7).map(card),
       items: slice.map(card),
       pages,
       hasPrev: page > 1,

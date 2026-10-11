@@ -173,6 +173,8 @@
   /* ── 홈: PC(1024px 이상)에서는 왼쪽 소식지, 오른쪽 언론 보도 두 패널이 한 화면에 다 들어온다.
      좁은 화면에서는 위아래로 쌓인다. ── */
   .ieg-home { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(20px, 4vw, 40px); }
+  /* 꼬리말이 없으므로 면이 화면 아래까지 찬다 */
+  .ieg-home-tile { min-height: calc(100vh - var(--nav-h)); box-sizing: border-box; }
   .ieg-panel { background: var(--canvas); border-radius: 18px; padding: clamp(20px, 2.4vw, 28px); }
   /* 소식지 패널: 짙은 면(#333333) 위에 지면이 사진처럼 떠 있다 */
   .ieg-home-nl.ieg-panel { background: var(--ink); }
@@ -232,7 +234,7 @@
   /* 언론 보도 페이지의 전체 목록 */
   .ieg-list { margin: 0; }
   /* 소식지·언론 보도 페이지는 내용이 짧아도 화면을 채워 꼬리말이 중간에 뜨지 않게 한다 */
-  .ieg-page { min-height: calc(100vh - var(--nav-h) - 80px); box-sizing: border-box; }
+  .ieg-page { min-height: calc(100vh - var(--nav-h)); box-sizing: border-box; }
   /* 페이지 번호: 알약 버튼, 지금 페이지는 짙게 채운다 */
   .ieg-pager { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: clamp(32px, 4vw, 48px); }
   .ieg-pg {
@@ -278,15 +280,6 @@
     display: block; font-family: var(--font-display);
     font-size: clamp(17px, 1.7vw, 19px); font-weight: 600; line-height: 1.34; letter-spacing: -0.022em;
     text-wrap: pretty; transition: color .2s var(--ease);
-  }
-
-  /* ── 꼬리말 ── */
-  /* 꼬리말: 연회색 면. 제호는 머리 막대와 똑같은 모양(.ieg-mark)을 그대로 쓴다. */
-  .ieg-foot { background: var(--parch); border-top: 1px solid var(--hair); }
-  .ieg-foot .ieg-in {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
-    padding-top: 28px; padding-bottom: 32px;
-    font-size: 12px; line-height: 1.33; letter-spacing: -0.01em; color: var(--muted);
   }
 
   /* ── 오른쪽 날짜 게이지 (언론 보도의 연·월) ── */
@@ -534,12 +527,7 @@
   </section>
   </sc-if>
 
-  <footer class="ieg-foot">
-    <div class="ieg-in">
-      <p class="ieg-mark"><a href="#/">IEG<span> NEWS</span></a></p>
-      <span>주식회사 아이지 · TECH-EDU</span>
-    </div>
-  </footer>
+
 </div>
 
 <!-- 오른쪽 날짜 게이지(언론 보도 페이지): 연·월 눈금을 누르면 그 달로 가고, 빨간 점이 지금 보고 있는 위치를 따라간다 -->

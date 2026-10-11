@@ -175,14 +175,13 @@
   .ieg-home { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(20px, 4vw, 40px); }
   /* 꼬리말이 없으므로 면이 화면 아래까지 찬다 */
   .ieg-home-tile { min-height: calc(100vh - var(--nav-h)); box-sizing: border-box; }
-  .ieg-panel { background: var(--canvas); border-radius: 18px; padding: clamp(20px, 2.4vw, 28px); }
-  /* 소식지 패널: 짙은 면(#333333) 위에 지면이 사진처럼 떠 있다 */
-  .ieg-home-nl.ieg-panel { background: var(--ink); }
-  .ieg-home-nl .ieg-sec-head h2, .ieg-home-nl .ieg-issue-label { color: #FFFFFF; }
-  .ieg-home-nl .ieg-note { color: rgba(255,255,255,0.62); flex: 0 1 auto; }
-  /* 짙은 면 위에서는 기본 그림자가 보이지 않으므로 더 깊게(그림자는 여전히 사진에만) */
-  .ieg-home-nl .ieg-sheet { box-shadow: 0 28px 60px -18px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06); }
-  .ieg-home-nl .ieg-pill:hover { background: #FFFFFF; border-color: #FFFFFF; color: var(--red); }
+  .ieg-panel { background: var(--canvas); border-radius: 18px; padding: clamp(20px, 2.4vw, 28px); box-shadow: 0 0 0 1px var(--hair); }
+  /* 두 패널의 머리: 같은 제목 굵기, 아래에 같은 머리카락 선 */
+  .ieg-home .ieg-sec-head { padding-bottom: 14px; border-bottom: 1px solid var(--hair); }
+  .ieg-home .ieg-sec-head h2 { font-weight: 700; }
+  /* 안내 문구는 자기 길이만큼만 차지해 제목과 한 줄에 놓인다(자리가 모자랄 때만 아래로) */
+  .ieg-home .ieg-note { flex: 0 1 auto; }
+  /* 두 패널(소식지·언론 보도)은 같은 흰 면·같은 모양이다. 소식지 지면은 그 위에 사진처럼 놓인다. */
 
   /* 언론 보도 패널: 맨 위 최신 기사는 큰 사진과 큰 제목으로, 나머지는 촘촘한 줄로 */
   .ieg-lead {
@@ -216,7 +215,7 @@
     .ieg-home .ieg-panel-in { display: flex; flex-direction: column; flex: 1 1 auto; }
     /* 두 패널의 더보기는 맨 아래 같은 높이에 */
     .ieg-home .ieg-more { margin-top: auto; padding-top: 16px; }
-    .ieg-home .ieg-sec-head { margin-bottom: 14px; }
+    .ieg-home .ieg-sec-head { margin-bottom: 16px; }
     .ieg-home .ieg-issue-label { margin-bottom: 10px; }
     /* 지면 높이 = 화면 − 머리 막대 − (타일 여백·패널 여백·제목·호 표시·더보기).
        여러 장이면 같은 높이로 나란히 놓고, 칸 폭을 넘으면 함께 줄어든다. */

@@ -153,15 +153,15 @@
      두 장 이상인 호는 두 장씩 나란히(장당 최대 480px) 놓는다. 누르면 확대 보기에서 더 크게 읽는다. */
   .ieg-issue { display: flex; flex-direction: column; align-items: center; }
   .ieg-issue + .ieg-issue { margin-top: clamp(48px, 6vw, 72px); }
-  /* 호 표시: 신문 날짜 줄처럼 — 양옆으로 가는 선이 뻗고, 가운데 연도는 작게, 월은 크고 굵게 */
+  /* 호 표시: 신문 날짜 줄처럼 — 양옆으로 가는 선이 뻗고, 가운데에 연·월을 같은 크기로(월만 강조하지 않는다) */
   .ieg-issue-label {
     align-self: stretch; margin: 0 0 16px;
     display: flex; align-items: center; gap: 16px;
     font-family: var(--font-display); font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink);
   }
   .ieg-issue-label::before, .ieg-issue-label::after { content: ""; flex: 1 1 0; height: 1px; background: rgba(0,0,0,0.16); }
-  .ieg-issue-y { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; color: var(--muted); }
-  .ieg-issue-m { margin-left: 4px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
+  .ieg-issue-y, .ieg-issue-m { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+  .ieg-issue-m { margin-left: 5px; }
   .ieg-pages { display: grid; justify-content: center; gap: clamp(20px, 2.6vw, 32px); width: 100%; }
   .ieg-pages.is-n1 { grid-template-columns: minmax(0, 720px); }
   .ieg-pages.is-n2 { grid-template-columns: repeat(2, minmax(0, 480px)); }
@@ -254,7 +254,20 @@
     .ieg-home .ieg-pages { display: flex; justify-content: center; gap: 16px; }
     .ieg-home .ieg-sheet { flex: 0 1 auto; width: auto; }
     .ieg-home .ieg-sheet img { width: auto; height: auto; max-width: 100%; max-height: var(--nl-h); }
-  }
+    /* 두 패널 맞추기: 카드 줄들이 남는 높이를 나눠 갖고, 카드 사진이 그만큼 커져 언론 보도 아래 끝이 소식지 지면 아래 끝과 맞는다.
+       사진은 16:9에서 4:3까지만 커진다(그 이상 늘리면 사진 내용이 많이 잘린다). 카드 폭 = (줄 폭 − 칸 간격 2개) / 3. */
+    .ieg-home .ieg-stories {
+      flex: 1 1 auto; min-height: 0; container-type: inline-size;
+      /* 한 줄 = 사진 칸(남는 높이를 나눠 가짐) · 날짜 칸 · 제목 칸. 한 줄 안의 카드들은 이 칸을 같이 써서 사진·날짜·제목이 같은 선에서 시작한다. */
+      grid-auto-rows: minmax(0, 1fr) auto auto; row-gap: 0;
+    }
+    .ieg-home .ieg-story { grid-row: span 3; display: grid; grid-template-rows: subgrid; gap: 0; min-height: 0; }
+    .ieg-home .ieg-story .ieg-meta { margin: 8px 0 4px; align-self: start; }
+    .ieg-home .ieg-story-title { margin-bottom: 18px; }
+    .ieg-home .ieg-story-img {
+      align-self: end; aspect-ratio: auto; margin: 0; height: 100%;
+      min-height: calc((100cqw - 32px) / 3 * 0.5625); max-height: calc((100cqw - 32px) / 3 * 0.75);
+    }  }
   /* 한 화면에 들어오게: 높이 1000px 미만이면 사진을 납작하게·간격을 좁게 해서 카드 두 줄(6건)을 넣고,
      높이 880px 미만이면 카드 한 줄(3건)만 둔다. */
   @media (min-width: 1024px) and (max-height: 999px) {
@@ -460,7 +473,6 @@
         <div class="ieg-panel-in">
           <div class="ieg-sec-head">
             <h2>언론 보도</h2>
-            <p class="ieg-note">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
           </div>
           <!-- 가장 최신 기사 하나는 위에 크게, 나머지는 모두 같은 모양의 카드로 -->
           <sc-for list="{{ lead }}" as="item" hint-placeholder-count="1">

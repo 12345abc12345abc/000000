@@ -3,14 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>
-// 첫 화면 인트로 준비: 내용을 그리기 전에 패널을 숨겨 둔다(움직임 줄이기 설정이면 하지 않는다).
-// 혹시 인트로가 시작되지 못해도 4초 뒤에는 무조건 보이게 한다.
-if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
-  document.documentElement.classList.add('ieg-intro');
-  setTimeout(function(){ document.documentElement.classList.remove('ieg-intro'); }, 4000);
-}
-</script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -55,6 +47,9 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
     -webkit-font-smoothing: antialiased; color: var(--ink);
   }
   * { font-family: inherit; }
+  /* 배경(패널 밖)을 두 번·여러 번 눌러도 글자가 선택돼 파랗게 칠해지지 않게 한다. 패널 안 글은 그대로 선택·복사할 수 있다. */
+  body { -webkit-user-select: none; user-select: none; }
+  .ieg-panel, .ieg-modal-label { -webkit-user-select: text; user-select: text; }
   a { color: var(--ink); text-decoration: none; }
   ::selection { background: rgba(255,179,0,0.38); color: var(--ink); }
   :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
@@ -85,7 +80,7 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
     /* 언론 보도 목록 줄: 아래에서 떠오르고, 화면 안에 다 들어오면 완성된 모습이다(첫 화면에서 흐리게 남지 않게) */
     .ieg-row { animation: iegRise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     /* 사진은 스크롤보다 조금 느리게 움직여 깊이감이 생긴다 */
-    .ieg-thumb img, .ieg-lead-img img { animation: iegPar linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+    .ieg-thumb img, .ieg-lead-img img, .ieg-story-img img { animation: iegPar linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
     /* 더보기·페이지 번호는 아래에서 떠오른다 */
     .ieg-more, .ieg-pager { animation: iegRise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
   }
@@ -172,11 +167,24 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
   .ieg-pages.is-n2 { grid-template-columns: repeat(2, minmax(0, 480px)); }
   @media (max-width: 640px) { .ieg-pages.is-n2 { grid-template-columns: minmax(0, 1fr); } }
   .ieg-sheet {
+    position: relative; overflow: hidden;
     display: block; width: 100%; padding: 0; border: 0; background: var(--canvas);
     box-shadow: var(--shadow-photo); cursor: zoom-in;
-    transition: transform .4s var(--ease);
+    transition: transform .4s var(--ease), box-shadow .5s var(--ease);
   }
-  .ieg-sheet:hover { transform: translateY(-4px); }
+  /* 커서를 올리면 지면 위로 빛줄기가 '샤악' 한 번 스치고, 둘레에 따뜻한 빛이 번진다 */
+  .ieg-sheet::after {
+    content: ""; position: absolute; top: -10%; bottom: -10%; left: -60%; width: 55%; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 30%,
+      rgba(255,255,255,0.85) 50%, rgba(255,250,230,0.15) 70%, rgba(255,255,255,0) 100%);
+    transform: skewX(-12deg); opacity: 0;
+  }
+  .ieg-sheet:hover::after { animation: iegShine .85s cubic-bezier(.3,.6,.3,1) both; }
+  @keyframes iegShine { 0% { left: -60%; opacity: 1; } 100% { left: 115%; opacity: 1; } }
+  .ieg-sheet:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-photo), 0 0 0 1px rgba(255,179,0,0.35), 0 0 42px rgba(255,179,0,0.32);
+  }
   .ieg-sheet:active { transform: scale(0.99); }
   .ieg-sheet img { display: block; width: 100%; height: auto; }
 
@@ -196,31 +204,56 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
   .ieg-home .ieg-note { flex: 0 1 auto; }
   /* 두 패널(소식지·언론 보도)은 같은 흰 면·같은 모양이다. 소식지 지면은 그 위에 사진처럼 놓인다. */
 
-  /* 언론 보도 패널: 맨 위 최신 기사는 큰 사진과 큰 제목으로, 나머지는 촘촘한 줄로 */
-  .ieg-lead {
-    display: grid; grid-template-columns: min(46%, 300px) minmax(0, 1fr); gap: 18px; align-items: center;
-    padding-bottom: 16px; margin-bottom: 4px; border-bottom: 1px solid var(--hair); color: var(--ink);
-  }
+  /* 언론 보도 패널은 신문 1면처럼 짠다:
+     왼쪽 머리기사(큰 사진 + 큰 제목), 오른쪽 주요 기사 제목 세 꼭지(가는 세로선으로 나눔), 아래 사진 기사 줄.
+     제목은 자르지 않는다. */
+  .ieg-front { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .ieg-lead { display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
   .ieg-lead-img {
     position: relative; display: block; overflow: clip; border-radius: 12px; background: var(--parch);
-    aspect-ratio: 16 / 10; min-height: 0;
+    aspect-ratio: 16 / 9; min-height: 0; margin-bottom: 8px;
   }
   .ieg-lead-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
-  .ieg-lead:hover .ieg-lead-img img { transform: scale(1.05); }
-  .ieg-lead .ieg-meta { margin-bottom: 8px; }
-  /* 제목은 자르지 않고 전부 보인다(말줄임 없음) */
+  .ieg-lead:hover .ieg-lead-img img { transform: scale(1.04); }
+  .ieg-lead .ieg-meta { margin-bottom: 0; }
   .ieg-lead-title {
     display: block;
-    font-family: var(--font-display); font-size: clamp(19px, 1.7vw, 23px); font-weight: 700; line-height: 1.32; letter-spacing: -0.03em;
+    font-family: var(--font-display); font-size: clamp(21px, 2vw, 27px); font-weight: 700; line-height: 1.28; letter-spacing: -0.035em;
     transition: color .2s var(--ease);
   }
-  .ieg-lead:hover .ieg-lead-title { color: var(--red); }
-  @media (max-width: 560px) { .ieg-lead { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+  .ieg-side { display: flex; flex-direction: column; }
+  .ieg-side-item { display: block; padding: 14px 0; border-top: 1px solid var(--hair); color: var(--ink); }
+  .ieg-side-item:first-child { padding-top: 0; border-top: 0; }
+  .ieg-side-item .ieg-meta { font-size: 13px; margin-bottom: 4px; }
+  .ieg-side-title {
+    display: block; font-family: var(--font-display);
+    font-size: 16px; font-weight: 600; line-height: 1.42; letter-spacing: -0.022em; transition: color .2s var(--ease);
+  }
+  .ieg-stories {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px;
+    margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--hair);
+  }
+  .ieg-story { display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+  .ieg-story-img {
+    position: relative; display: block; overflow: clip; border-radius: 10px; background: var(--parch);
+    aspect-ratio: 16 / 10; min-height: 0; margin-bottom: 4px;
+  }
+  .ieg-story-img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
+  .ieg-story:hover .ieg-story-img img { transform: scale(1.05); }
+  .ieg-story .ieg-meta { font-size: 13px; margin-bottom: 0; }
+  .ieg-story-title { display: block; font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: -0.02em; transition: color .2s var(--ease); }
+  .ieg-lead:hover .ieg-lead-title, .ieg-side-item:hover .ieg-side-title, .ieg-story:hover .ieg-story-title { color: var(--red); }
+  /* 한국어 제목은 낱말 중간에서 끊지 않는다 */
+  .ieg-lead-title, .ieg-side-title, .ieg-story-title, .ieg-title { word-break: keep-all; overflow-wrap: anywhere; }
+  /* 사진 기사는 휴대폰에서 2×2, 그보다 넓으면 한 줄에 셋 */
+  @media (min-width: 640px) {
+    .ieg-stories { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ieg-stories .ieg-story:nth-child(n+4) { display: none; }
+  }
   .ieg-panel .ieg-thumb { width: 96px; }
   .ieg-panel .ieg-title {
     font-size: 16px; line-height: 1.38;
-  }
-  @media (min-width: 1024px) {
+  }  @media (min-width: 1024px) {
     .ieg-home-tile { padding: 24px 0 28px; }
     /* 왼쪽 칸은 소식지 지면 폭만큼(최대 절반), 오른쪽은 나머지. 두 패널은 같은 높이다. */
     .ieg-home { grid-template-columns: fit-content(50%) minmax(0, 1fr); gap: clamp(20px, 2.2vw, 32px); align-items: stretch; }
@@ -236,13 +269,20 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
     .ieg-home .ieg-pages { display: flex; justify-content: center; gap: 16px; }
     .ieg-home .ieg-sheet { flex: 0 1 auto; width: auto; }
     .ieg-home .ieg-sheet img { width: auto; height: auto; max-width: 100%; max-height: var(--nl-h); }
-    .ieg-home-press .ieg-row { padding-top: 9px; padding-bottom: 9px; }
-    .ieg-home-press .ieg-meta { font-size: 13px; margin-bottom: 3px; }
+    /* 머리기사 | 주요 기사: 가운데 가는 세로선(신문 단 나눔) */
+    .ieg-front { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; }
+    .ieg-lead { padding-right: 22px; }
+    .ieg-side { padding-left: 22px; border-left: 1px solid var(--hair); }
   }
-  /* 화면이 낮으면 줄 수를 줄여 한 화면을 넘지 않게 한다(큰 기사 1 + 줄 7/5/3) */
-  @media (max-width: 1023px) { .ieg-home-press .ieg-row:nth-child(n+6) { display: none; } }
-  @media (min-width: 1024px) and (max-height: 1000px) { .ieg-home-press .ieg-row:nth-child(n+6) { display: none; } }
-  @media (min-width: 1024px) and (max-height: 820px) { .ieg-home-press .ieg-row:nth-child(n+4) { display: none; } }
+  /* 화면이 낮으면(높이 890px 미만) 사진을 납작하게, 간격을 좁게 해서 한 화면 안에 넣는다 */
+  @media (min-width: 1024px) and (max-height: 889px) {
+    .ieg-lead-img { aspect-ratio: 2 / 1; }
+    .ieg-stories { margin-top: 12px; padding-top: 12px; gap: 12px; }
+    .ieg-story { gap: 4px; }
+    .ieg-story-img { aspect-ratio: 21 / 9; }
+    .ieg-story-title { font-size: 14px; }
+    .ieg-side-item { padding: 10px 0; }
+  }
   /* 언론 보도 페이지의 전체 목록 */
   .ieg-list { margin: 0; }
   /* 소식지·언론 보도 페이지는 내용이 짧아도 화면을 채워 꼬리말이 중간에 뜨지 않게 한다 */
@@ -365,14 +405,6 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
   .ieg-circle:hover { background: var(--ink); color: #FFFFFF; }
   .ieg-circle:active { transform: scale(0.95); }
   .ieg-top { position: fixed; right: clamp(16px, 3vw, 32px); bottom: clamp(16px, 3vw, 32px); z-index: 30; animation: iegIn .2s ease-out; }
-  /* ── 첫 화면 인트로 ── */
-  /* 페이지를 열면 패널을 잠시 숨기고(html.ieg-intro) 배경 점이 IEG NEWS로 모였다 흩어진 뒤,
-     클래스를 떼면 패널이 아래에서 떠오른다(언론 보도 패널은 조금 늦게). */
-  .ieg-panel { transition: opacity .7s var(--ease), transform .8s var(--ease); }
-  .ieg-home-press.ieg-panel { transition-delay: .12s; }
-  .ieg-rail { transition: opacity .6s var(--ease); }
-  html.ieg-intro .ieg-panel { opacity: 0; transform: translateY(36px) scale(0.985); transition: none; }
-  html.ieg-intro .ieg-rail, html.ieg-intro .ieg-top { opacity: 0; transition: none; }
 
   /* ── 확대 보기 ── */
   .ieg-modal {
@@ -447,31 +479,31 @@ if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matche
             <h2>언론 보도</h2>
             <p class="ieg-note">같은 내용이 여러 매체에 보도된 경우, 가장 상위 언론사의 기사만 싣습니다.</p>
           </div>
-          <!-- 가장 최근 기사는 큰 사진과 큰 제목으로 -->
-          <sc-for list="{{ lead }}" as="item" hint-placeholder-count="1">
-            <a class="ieg-lead" href="{{ item.url }}" target="_blank" rel="noopener">
-              <span class="ieg-lead-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
-              <span>
+          <!-- 신문 1면처럼: 왼쪽 머리기사, 오른쪽 주요 기사 제목, 아래 사진 기사 -->
+          <div class="ieg-front">
+            <sc-for list="{{ lead }}" as="item" hint-placeholder-count="1">
+              <a class="ieg-lead" href="{{ item.url }}" target="_blank" rel="noopener">
+                <span class="ieg-lead-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
                 <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
                 <span class="ieg-lead-title">{{ item.title }}</span>
-              </span>
-            </a>
-          </sc-for>
-          <!-- 그다음 기사들은 썸네일과 함께 촘촘한 줄로 -->
-          <div class="ieg-list">
-            <sc-for list="{{ cards }}" as="item" hint-placeholder-count="6">
-              <div class="ieg-row">
-                <a class="ieg-thumb" href="{{ item.url }}" target="_blank" rel="noopener" tabIndex="-1" aria-hidden="true">
-                  <img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer">
+              </a>
+            </sc-for>
+            <div class="ieg-side">
+              <sc-for list="{{ side }}" as="item" hint-placeholder-count="3">
+                <a class="ieg-side-item" href="{{ item.url }}" target="_blank" rel="noopener">
+                  <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
+                  <span class="ieg-side-title">{{ item.title }}</span>
                 </a>
-                <div style="flex:1 1 auto;min-width:0">
-                  <div class="ieg-meta">
-                    <span class="ieg-date">{{ item.date }}</span>
-                    <span class="ieg-media">{{ item.media }}</span>
-                  </div>
-                  <a class="ieg-title" href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
-                </div>
-              </div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ieg-stories">
+            <sc-for list="{{ stories }}" as="item" hint-placeholder-count="4">
+              <a class="ieg-story" href="{{ item.url }}" target="_blank" rel="noopener">
+                <span class="ieg-story-img"><img src="{{ item.img }}" alt="" loading="lazy" referrerPolicy="no-referrer"></span>
+                <span class="ieg-meta"><span class="ieg-date">{{ item.date }}</span><span class="ieg-media">{{ item.media }}</span></span>
+                <span class="ieg-story-title">{{ item.title }}</span>
+              </a>
             </sc-for>
           </div>
           <div class="ieg-more"><a class="ieg-pill" href="#/press">더보기</a></div>
@@ -737,59 +769,22 @@ const navHeight = () => {
 };
 const JUMP_GAP = 16;   // 이동했을 때 탭 줄과 기사 사이 간격
 const READ_GAP = 48;   // 판정선은 탭 줄 아래 이만큼 (JUMP_GAP보다 커야 이동한 기사가 현재로 잡힌다)
-// ── 배경: 점으로 된 물결 + 첫 화면 인트로 ──
+// ── 배경: 점으로 된 물결 ──
 // 화면 전체에 고르게 놓인 점들이 겹친 물결을 따라 천천히 출렁인다(마루일수록 점이 크고 진하다).
 // 커서 가까이의 점은 물이 갈라지듯 옆으로 밀려나며 빨갛게 물든다(커서를 따라다니지는 않는다).
 // 패널 밖 빈 곳을 누르면 그 자리에서 노란 물결이 퍼져 나간다.
-// 첫 화면 인트로(intro): 점들이 'IEG NEWS'(IEG 검정, NEWS 빨강)로 모였다가 가운데서 충격파로 흩어진 뒤 내용이 떠오른다.
-// 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 멈춘 점만 그린다(인트로도 건너뛴다).
+// 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 멈춘 점만 그린다. 페이지가 처음 뜰 때 따로 나타나는 효과는 없다.
 function startDotWave(canvas) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", Pretendard, "Apple SD Gothic Neo", sans-serif';
-  let w = 0, h = 0, gap = 26, cols = 0, rows = 0, raf = 0, mask = null;
-  let reveal = null;    // 글자 모으기 { at, rise, hold, fall } (초). at은 그리는 시계로 잡는다.
-  let intro = null;     // 첫 화면 인트로 { at, burst, done }
+  let w = 0, h = 0, gap = 26, cols = 0, rows = 0, raf = 0;
   const mouse = { x: 0, y: 0, on: false };
   const ripples = [];   // { x, y, start, speed, life, amp, band }
   const R = 150;        // 커서가 점을 미는 반경
 
   const smallRipple = (x, y) => ({ x, y, start: -1, speed: 380, life: 1.8, amp: 12, band: 70 });
-  const shockwave = (x, y, p) => ({ x, y, start: -1, speed: 520 + 320 * p, life: 1.7 + 0.6 * p, amp: 14 + 26 * p, band: 80 + 40 * p });
   const pushRipple = (r) => { ripples.push(r); if (ripples.length > 6) ripples.shift(); };
-
-  // 'IEG NEWS' 글자 모양을 격자 점에 옮겨 둔다(1 = IEG, 2 = NEWS). 휴대폰 폭에서는 'IEG'만.
-  const buildMask = () => {
-    const off = document.createElement('canvas'); off.width = w; off.height = h;
-    const o = off.getContext('2d');
-    const words = w < 700 ? ['IEG'] : ['IEG', ' NEWS'];
-    o.font = '800 100px ' + FONT;
-    const size = Math.min(100 * (w * 0.84) / o.measureText(words.join('')).width, h * 0.42);
-    o.font = '800 ' + size + 'px ' + FONT; o.textBaseline = 'middle';
-    let x = (w - o.measureText(words.join('')).width) / 2;
-    o.fillStyle = '#0000FF'; o.fillText(words[0], x, h / 2);
-    if (words[1]) { x += o.measureText(words[0]).width; o.fillStyle = '#FF0000'; o.fillText(words[1], x, h / 2); }
-    const data = o.getImageData(0, 0, w, h).data;
-    mask = new Uint8Array(cols * rows);
-    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-      const bx = Math.round(i * gap + (j % 2 ? gap / 2 : 0)), by = Math.round(j * gap);
-      if (bx < 0 || by < 0 || bx >= w || by >= h) continue;
-      const p = (by * w + bx) * 4;
-      mask[j * cols + i] = data[p + 2] > 128 ? 1 : data[p] > 128 ? 2 : 0;
-    }
-  };
-  // 글자 세기(0~1): rise초에 걸쳐 나타나 hold초 머물고 fall초에 걸쳐 사라진다
-  const revealAt = (now) => {
-    if (!reveal) return 0;
-    if (reveal.at < 0) reveal.at = now;
-    const r = reveal, t = (now - r.at) / 1000;
-    if (t < 0) return 0;
-    if (t < r.rise) return t / r.rise;
-    if (t < r.rise + r.hold) return 1;
-    if (t < r.rise + r.hold + r.fall) return 1 - (t - r.rise - r.hold) / r.fall;
-    reveal = null; return 0;
-  };
 
   const draw = (now) => {
     const s = now / 1000;
@@ -797,14 +792,6 @@ function startDotWave(canvas) {
     // 새 물결은 그리는 시계로 시작 시각을 잡는다(누른 순간의 시계와 그리는 시계가 다를 수 있다)
     for (let k = 0; k < ripples.length; k++) if (ripples[k].start < 0) ripples[k].start = now;
     for (let k = ripples.length - 1; k >= 0; k--) if ((now - ripples[k].start) / 1000 > ripples[k].life) ripples.splice(k, 1);
-    // 인트로: 글자로 모였다가 1.4초에 가운데서 충격파로 흩어지고, 1.55초에 내용을 띄운다(done)
-    if (intro) {
-      if (intro.at < 0) intro.at = now;
-      const e = now - intro.at;
-      if (!intro.burst && e > 1400) { intro.burst = true; pushRipple(shockwave(w / 2, h / 2, 0.8)); }
-      if (e > 1550) { const done = intro.done; intro = null; if (done) done(); }
-    }
-    const rv = revealAt(now);
 
     for (let j = 0; j < rows; j++) {
       const by = j * gap;
@@ -836,20 +823,12 @@ function startDotWave(canvas) {
           }
         }
         const crest = (wv + 1) / 2;
-        let rad = 0.8 + crest * 1.6 + hot * 1.8 + gold * 1.4;
-        let alpha = Math.min(1, 0.10 + crest * crest * 0.38 + hot * 0.55 + gold * 0.5);
-        let color = hot > gold
+        const rad = 0.8 + crest * 1.6 + hot * 1.8 + gold * 1.4;
+        const alpha = Math.min(1, 0.10 + crest * crest * 0.38 + hot * 0.55 + gold * 0.5);
+        const color = hot > gold
           ? 'rgb(' + Math.round(51 + 204 * hot) + ',' + Math.round(51 * (1 - hot)) + ',' + Math.round(51 * (1 - hot)) + ')'
           : gold > 0 ? 'rgb(' + Math.round(51 + 204 * gold) + ',' + Math.round(51 + 128 * gold) + ',' + Math.round(51 * (1 - gold)) + ')'
           : '#333333';
-        if (rv > 0 && mask) {
-          const m = mask[j * cols + i];
-          if (m) {
-            x += (bx - x) * rv * 0.85; y += (by - y) * rv * 0.85;
-            rad += 2.6 * rv; alpha = Math.max(alpha, 0.92 * rv);
-            if (rv > 0.15) color = m === 2 ? '#FF0000' : '#333333';
-          } else { alpha *= 1 - rv * 0.55; }
-        }
         ctx.globalAlpha = alpha;
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832); ctx.fill();
@@ -869,8 +848,6 @@ function startDotWave(canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     gap = w < 700 ? 22 : 26;
     cols = Math.ceil(w / gap) + 2; rows = Math.ceil(h / gap) + 2;
-    mask = null;
-    if (reveal) buildMask();
     if (reduce) draw(0);
   };
   const onMove = (e) => {
@@ -879,6 +856,13 @@ function startDotWave(canvas) {
   };
   const onLeave = () => { mouse.on = false; };
   // 패널·메뉴·버튼·링크가 아닌 빈 곳을 누르면 물결이 퍼진다
+  // 배경을 누를 때 브라우저가 글자 선택(드래그 칠)을 시작하지 않게 막는다(두 번 누르기 포함)
+  const onMouseDown = (e) => {
+    if (e.target.closest && e.target.closest('a, button, input, .ieg-panel, .ieg-modal')) return;
+    e.preventDefault();
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.rangeCount) sel.removeAllRanges();
+  };
   const onDown = (e) => {
     if (reduce || (e.target.closest && e.target.closest('a, button, .ieg-panel, .ieg-nav, .ieg-rail, .ieg-modal'))) return;
     pushRipple(smallRipple(e.clientX, e.clientY));
@@ -891,22 +875,10 @@ function startDotWave(canvas) {
   document.documentElement.addEventListener('pointerleave', onLeave);
   window.addEventListener('blur', onLeave);
   window.addEventListener('pointerdown', onDown, { passive: true });
+  window.addEventListener('mousedown', onMouseDown);
   document.addEventListener('visibilitychange', onVis);
   start();
   return {
-    // 첫 화면 인트로를 시작한다. 끝나면 done을 부른다(움직임 줄이기 설정이면 바로 부른다).
-    intro(done) {
-      if (reduce || !w) { done(); return; }
-      if (!mask) buildMask();
-      reveal = { at: -1, rise: 0.45, hold: 1.0, fall: 0.6 };
-      intro = { at: -1, burst: false, done };
-    },
-    // 누르거나 키를 누르면 인트로를 건너뛴다(글자는 작은 충격파와 함께 바로 흩어진다)
-    skipIntro() {
-      if (!intro) return;
-      intro = null;
-      if (reveal) { reveal = null; pushRipple(shockwave(w / 2, h / 2, 0.5)); }
-    },
     stop() {
       stop();
       window.removeEventListener('resize', resize);
@@ -914,6 +886,7 @@ function startDotWave(canvas) {
       document.documentElement.removeEventListener('pointerleave', onLeave);
       window.removeEventListener('blur', onLeave);
       window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('visibilitychange', onVis);
     }
   };
@@ -937,23 +910,6 @@ class Component extends DCLogic {
   componentDidMount() {
     const fx = document.querySelector('.ieg-fx');
     this._fx = fx ? startDotWave(fx) : null;
-    // 첫 화면 인트로: 점이 IEG NEWS로 모였다 흩어진 뒤 패널이 떠오른다. 누르거나 키·휠을 쓰면 바로 건너뛴다.
-    // 엔진이 없거나(캔버스 불가) 그릴 수 없는 상황이면 바로 보이고, 늦어도 3.2초 뒤에는 무조건 보인다.
-    const root = document.documentElement;
-    const finish = () => {
-      if (this._introDone) return;
-      this._introDone = true;
-      root.classList.remove('ieg-intro');
-      clearTimeout(this._introT);
-      this._skipOn.forEach(t => window.removeEventListener(t, this._skip));
-    };
-    this._skipOn = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
-    this._skip = () => { if (this._fx) this._fx.skipIntro(); finish(); };
-    if (root.classList.contains('ieg-intro') && this._fx) {
-      this._skipOn.forEach(t => window.addEventListener(t, this._skip, { passive: true }));
-      this._introT = setTimeout(finish, 3200);
-      this._fx.intro(finish);
-    } else finish();
     this._onKey = (e) => {
       if (this.state.modalIndex !== null) {
         if (e.key === 'Escape') this.closeModal();
@@ -987,7 +943,7 @@ class Component extends DCLogic {
     // (템플릿에 onError를 쓰면 원본 HTML이 먼저 깔릴 때 브라우저 기본 속성으로 실행돼 오류가 난다.)
     this._onImg = (e) => {
       const im = e.target;
-      if (!im || im.tagName !== 'IMG' || !im.closest('.ieg-thumb, .ieg-lead-img')) return;
+      if (!im || im.tagName !== 'IMG' || !im.closest('.ieg-thumb, .ieg-lead-img, .ieg-story-img')) return;
       if (e.type === 'error' || im.naturalWidth < 40 || im.naturalHeight < 30) this.dropImg(im.getAttribute('src'));
     };
     window.addEventListener('error', this._onImg, true);
@@ -1031,7 +987,7 @@ class Component extends DCLogic {
   // 화면에 붙이기 전에 로드가 끝나 window까지 이벤트가 오지 않는다. 그려질 때마다 썸네일 10개만 훑으므로 가볍다.
   // 아직 안 불러온 지연 로딩 그림은 complete가 false라 건너뛴다.
   scanThumbs() {
-    document.querySelectorAll('.ieg-thumb img, .ieg-lead-img img').forEach(im => {
+    document.querySelectorAll('.ieg-thumb img, .ieg-lead-img img, .ieg-story-img img').forEach(im => {
       if (im.complete && (im.naturalWidth < 40 || im.naturalHeight < 30)) this.dropImg(im.getAttribute('src'));
     });
   }
@@ -1047,9 +1003,6 @@ class Component extends DCLogic {
     if (this._sraf) cancelAnimationFrame(this._sraf);
     if (this._ro) this._ro.disconnect();
     if (this._fx) this._fx.stop();
-    document.documentElement.classList.remove('ieg-intro');
-    clearTimeout(this._introT);
-    if (this._skipOn) this._skipOn.forEach(t => window.removeEventListener(t, this._skip));
     clearTimeout(this._railT);
   }
 
@@ -1139,7 +1092,7 @@ class Component extends DCLogic {
       ym: ymOf(a.d), date: dateLabel(a.d), media: a.m, title: a.t, url: a.u,
       note: a.note || '', img: a.img && !s.brokenImg[a.img] ? a.img : ''
     });
-    // 홈: 사진이 있는 최근 기사 PRESS_PREVIEW건을 카드로. 카드 사진이 깨지면 다음 사진 기사가 올라온다.
+    // 홈: 사진이 있는 최근 기사 PRESS_PREVIEW건을 신문 1면처럼 싣는다. 사진이 깨지면 다음 사진 기사가 올라온다.
     const featured = SORTED.filter(a => a.img && !s.brokenImg[a.img]).slice(0, PRESS_PREVIEW);
     // 언론 보도 페이지: 전체 기사를 PER_PAGE건씩
     const page = Math.min(Math.max(1, s.page), PAGE_COUNT);
@@ -1198,8 +1151,10 @@ class Component extends DCLogic {
       latestIssue: ISSUES.slice(0, 1).map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
       // 소식지 페이지는 장수와 상관없이 한 줄로 쭉(한 장씩 위아래로) 내려가며 본다
       allIssues: ISSUES.map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
+      // 신문 1면: 머리기사 1, 주요 기사 제목 3, 사진 기사 4(넓은 화면은 3만 보인다)
       lead: featured.slice(0, 1).map(card),
-      cards: featured.slice(1).map(card),
+      side: featured.slice(1, 4).map(card),
+      stories: featured.slice(4, 8).map(card),
       items: slice.map(card),
       pages,
       hasPrev: page > 1,

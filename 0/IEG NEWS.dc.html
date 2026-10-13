@@ -436,7 +436,7 @@
   }
   .ieg-zoom { animation: iegZoom .45s var(--ease) both; }
 
-  /* ── 이스터에그: 숨은 빛 점을 다섯 번 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
+  /* ── 이스터에그: 숨은 빛 점을 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
   .ieg-egg { position: fixed; inset: 0; z-index: 60; overflow: hidden; perspective-origin: 50% 50%; touch-action: none; }
   .ieg-egg-veil {
     position: absolute; inset: 0; opacity: 0; pointer-events: none;
@@ -802,8 +802,8 @@ const READ_GAP = 48;   // 판정선은 탭 줄 아래 이만큼 (JUMP_GAP보다 
 // 패널 밖 빈 곳을 누르면 그 자리에서 노란 물결이 퍼져 나간다.
 // 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 멈춘 점만 그린다. 페이지가 처음 뜰 때 따로 나타나는 효과는 없다.
 // 숨은 빛 점(이스터에그): 빨간 빛 점 하나가 패널 뒤 배경을 날아다닌다. 패널에 가리면 안 보이고,
-// 빈 곳으로 나와 잠깐씩 머문다. 빈 곳에서 눌러 잡으면 터지며 사라졌다가 화면 가장자리에서 다시 날아온다.
-// 잡은 수만큼 작은 노란 점이 곁을 돌고, 다섯 번째로 잡으면 화면이 변신하며 IEG 로고가 나온다(playIegFinale).
+// 빈 곳으로 나와 잠깐씩 머문다. 빈 곳에서 눌러 잡으면 터지며 화면이 변신하고 IEG 로고가 나온다(playIegFinale).
+// 장면이 끝나고 9초 뒤 빛 점이 화면 가장자리에서 다시 날아온다.
 function startDotWave(canvas) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
@@ -820,7 +820,7 @@ function startDotWave(canvas) {
   // ── 숨은 빛 점 ──
   // wait: 다음에 나타날 때까지 남은 초, rest: 빈 곳에서 머무는 남은 초, (px, py): 흔들림까지 더한 실제 그리는 자리
   const egg = { alive: false, x: 0, y: 0, px: -99, py: -99, vx: 0, vy: 0, tx: 0, ty: 0, free: false,
-                wait: 3.5, rest: 0, caught: 0, busy: false, fade: 0, seed: Math.random() * 9, trail: [] };
+                wait: 3.5, rest: 0, busy: false, fade: 0, seed: Math.random() * 9, trail: [] };
   const sparks = [];    // 잡을 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
   const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
   // 패널·머리 막대에 가리지 않는 빈 곳을 고른다. 화면을 16px 간격으로 훑어 실제로 보이는 자리(좁은 화면의
@@ -849,26 +849,24 @@ function startDotWave(canvas) {
     egg.alive = true; egg.rest = 0; egg.fade = 0; egg.trail = [];
     pickTarget();
   };
-  const burst = (x, y, n, big) => {
-    for (let k = 0; k < n; k++) {
-      const a = Math.random() * 6.2832, v = (big ? 260 : 150) + Math.random() * (big ? 420 : 230);
+  const burst = (x, y) => {
+    for (let k = 0; k < 40; k++) {
+      const a = Math.random() * 6.2832, v = 260 + Math.random() * 420;
       sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, age: 0, life: 0.45 + Math.random() * 0.45,
                     col: k % 2 ? '#FF0000' : '#FFB300' });
     }
-    if (sparks.length > 160) sparks.splice(0, sparks.length - 160);
   };
+  // 잡으면 그 자리에서 터지고 곧바로 변신 장면이 시작된다. 장면이 끝나고 9초 뒤 빛 점이 다시 온다.
   const catchEgg = () => {
     const x = egg.px, y = egg.py;
-    egg.alive = false; egg.px = egg.py = -99; egg.caught += 1;
-    const fin = egg.caught >= 5;
-    burst(x, y, fin ? 40 : 18, fin);
-    pushRipple(shockwave(x, y, fin ? 0.9 : 0.35));
-    if (fin && typeof playIegFinale === 'function') {
-      egg.caught = 0; egg.busy = true;
-      playIegFinale({ x, y,
-        ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
-        done: () => { egg.busy = false; egg.wait = 9; } });
-    } else { egg.wait = 1.4; }
+    egg.alive = false; egg.px = egg.py = -99; egg.wait = 9;
+    burst(x, y);
+    pushRipple(shockwave(x, y, 0.9));
+    if (typeof playIegFinale !== 'function') return;
+    egg.busy = true;
+    playIegFinale({ x, y,
+      ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
+      done: () => { egg.busy = false; egg.wait = 9; } });
   };
   const stepEgg = (dt, s) => {
     for (let k = sparks.length - 1; k >= 0; k--) {
@@ -888,8 +886,7 @@ function startDotWave(canvas) {
       // 빈 곳에 닿으면 반쯤은 잠깐 머물러(찾아 누를 틈) 주고, 아니면 바로 다음 곳으로 간다
       if (egg.free && Math.random() < 0.5) egg.rest = 0.7 + Math.random() * 0.9; else pickTarget();
     }
-    // 잡을수록 빨라진다
-    const sp = egg.rest > 0 ? 0 : (120 + 22 * egg.caught) * Math.min(1, 0.35 + d / 120);
+    const sp = egg.rest > 0 ? 0 : 120 * Math.min(1, 0.35 + d / 120);
     const k = Math.min(1, dt * 2.4);
     egg.vx += ((d ? dx / d : 0) * sp - egg.vx) * k;
     egg.vy += ((d ? dy / d : 0) * sp - egg.vy) * k;
@@ -926,12 +923,6 @@ function startDotWave(canvas) {
       ctx.beginPath(); ctx.arc(x, y, 5.6 + pulse * 1.2, 0, 6.2832); ctx.fill();
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath(); ctx.arc(x - 1.5, y - 1.5, 2.1, 0, 6.2832); ctx.fill();
-      // 지금까지 잡은 수만큼 노란 점이 곁을 돈다
-      for (let k = 0; k < egg.caught; k++) {
-        const t = s * 2.6 + k * 6.2832 / egg.caught;
-        ctx.fillStyle = '#FFB300';
-        ctx.beginPath(); ctx.arc(x + Math.cos(t) * 15, y + Math.sin(t) * 11, 2.4, 0, 6.2832); ctx.fill();
-      }
     }
     ctx.globalAlpha = 1;
   };
@@ -1066,7 +1057,7 @@ function startDotWave(canvas) {
   };
 }
 
-// ── 이스터에그 피날레: 숨은 빛 점을 다섯 번 잡으면 화면이 변신하며 입체 IEG 로고가 나온다(약 8초) ──
+// ── 이스터에그 피날레: 숨은 빛 점을 잡으면 화면이 변신하며 입체 IEG 로고가 나온다(약 8초) ──
 //  0.0~1.2초  패널이 덜컹거리다 문처럼 열리며 물러나고, 잡은 자리의 빛이 가운데로 날아온다
 //  0.7~1.35초 빛이 금속 블록(작은 정육면체 수백 개)으로 굳으며 돌아 들어온다
 //  1.35~3.0초 블록이 I, E, G 순서로 기계처럼 펼쳐진다. 정육면체가 세 축을 차례로 미끄러지며 구르다가

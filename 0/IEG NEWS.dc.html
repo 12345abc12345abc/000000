@@ -436,7 +436,7 @@
   }
   .ieg-zoom { animation: iegZoom .45s var(--ease) both; }
 
-  /* ── 이스터에그: 숨은 빛 점을 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
+  /* ── 이스터에그: 숨은 우주선을 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
   .ieg-egg { position: fixed; inset: 0; z-index: 60; overflow: hidden; perspective-origin: 50% 50%; touch-action: none; }
   .ieg-egg-veil {
     position: absolute; inset: 0; opacity: 0; pointer-events: none;
@@ -801,9 +801,9 @@ const READ_GAP = 48;   // 판정선은 탭 줄 아래 이만큼 (JUMP_GAP보다 
 // 커서 가까이의 점은 물이 갈라지듯 옆으로 밀려나며 빨갛게 물든다(커서를 따라다니지는 않는다).
 // 패널 밖 빈 곳을 누르면 그 자리에서 노란 물결이 퍼져 나간다.
 // 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 멈춘 점만 그린다. 페이지가 처음 뜰 때 따로 나타나는 효과는 없다.
-// 숨은 빛 점(이스터에그): 빨간 빛 점 하나가 패널 뒤 배경을 날아다닌다. 패널에 가리면 안 보이고,
-// 빈 곳으로 나와 잠깐씩 머문다. 빈 곳에서 눌러 잡으면 터지며 화면이 변신하고 IEG 로고가 나온다(playIegFinale).
-// 장면이 끝나고 9초 뒤 빛 점이 화면 가장자리에서 다시 날아온다.
+// 숨은 우주선(이스터에그): 작은 우주선 하나가 패널 뒤 배경을 날아다닌다(가는 쪽으로 머리를 돌린다). 패널에 가리면
+// 안 보이고, 빈 곳으로 나와 잠깐씩 머문다. 빈 곳에서 눌러 잡으면 화면이 변신하고 IEG 로고가 나온다(playIegFinale).
+// 장면이 끝나고 9초 뒤 우주선이 화면 가장자리에서 다시 날아온다.
 function startDotWave(canvas) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
@@ -817,10 +817,12 @@ function startDotWave(canvas) {
   const shockwave = (x, y, p) => ({ x, y, start: -1, speed: 520 + 320 * p, life: 1.7 + 0.6 * p, amp: 14 + 26 * p, band: 80 + 40 * p });
   const pushRipple = (r) => { ripples.push(r); if (ripples.length > 6) ripples.shift(); };
 
-  // ── 숨은 빛 점 ──
-  // wait: 다음에 나타날 때까지 남은 초, rest: 빈 곳에서 머무는 남은 초, (px, py): 흔들림까지 더한 실제 그리는 자리
-  const egg = { alive: false, x: 0, y: 0, px: -99, py: -99, vx: 0, vy: 0, tx: 0, ty: 0, free: false,
+  // ── 숨은 우주선 ──
+  // wait: 다음에 나타날 때까지 남은 초, rest: 빈 곳에서 머무는 남은 초, (px, py): 흔들림까지 더한 실제 그리는 자리,
+  // ang: 머리 방향(라디안), trail: 지나온 엔진 자리(불꽃 자국)
+  const egg = { alive: false, x: 0, y: 0, px: -99, py: -99, vx: 0, vy: 0, tx: 0, ty: 0, free: false, ang: 0,
                 wait: 3.5, rest: 0, busy: false, fade: 0, seed: Math.random() * 9, trail: [] };
+  const shipScale = () => (w < 700 ? 0.95 : 1.1);
   const sparks = [];    // 잡을 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
   const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
   // 패널·머리 막대에 가리지 않는 빈 곳을 고른다. 화면을 16px 간격으로 훑어 실제로 보이는 자리(좁은 화면의
@@ -845,26 +847,27 @@ function startDotWave(canvas) {
     egg.x = side === 0 ? -30 : side === 1 ? w + 30 : 40 + Math.random() * (w - 80);
     egg.y = side === 2 ? -30 : side === 3 ? h + 30 : 120 + Math.random() * (h - 160);
     const dx = w / 2 - egg.x, dy = h / 2 - egg.y, d = Math.hypot(dx, dy) || 1;
-    egg.vx = dx / d * 160; egg.vy = dy / d * 160;
+    egg.vx = dx / d * 160; egg.vy = dy / d * 160; egg.ang = Math.atan2(dy, dx);
     egg.alive = true; egg.rest = 0; egg.fade = 0; egg.trail = [];
     pickTarget();
   };
   const burst = (x, y) => {
-    for (let k = 0; k < 40; k++) {
-      const a = Math.random() * 6.2832, v = 260 + Math.random() * 420;
-      sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, age: 0, life: 0.45 + Math.random() * 0.45,
+    for (let k = 0; k < 18; k++) {
+      const a = Math.random() * 6.2832, v = 160 + Math.random() * 280;
+      sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, age: 0, life: 0.35 + Math.random() * 0.35,
                     col: k % 2 ? '#FF0000' : '#FFB300' });
     }
   };
-  // 잡으면 그 자리에서 터지고 곧바로 변신 장면이 시작된다. 장면이 끝나고 9초 뒤 빛 점이 다시 온다.
+  // 잡으면 그 자리에 불꽃이 튀고, 우주선은 화면 위 무대로 넘어가 가운데로 날아가며 변신 장면이 시작된다.
+  // 장면이 끝나고 9초 뒤 다시 온다.
   const catchEgg = () => {
-    const x = egg.px, y = egg.py;
+    const x = egg.px, y = egg.py, ang = egg.ang;
     egg.alive = false; egg.px = egg.py = -99; egg.wait = 9;
     burst(x, y);
-    pushRipple(shockwave(x, y, 0.9));
+    pushRipple(shockwave(x, y, 0.6));
     if (typeof playIegFinale !== 'function') return;
     egg.busy = true;
-    playIegFinale({ x, y,
+    playIegFinale({ x, y, ang,
       ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
       done: () => { egg.busy = false; egg.wait = 9; } });
   };
@@ -891,10 +894,20 @@ function startDotWave(canvas) {
     egg.vx += ((d ? dx / d : 0) * sp - egg.vx) * k;
     egg.vy += ((d ? dy / d : 0) * sp - egg.vy) * k;
     egg.x += egg.vx * dt; egg.y += egg.vy * dt;
-    egg.px = egg.x + Math.sin(s * 2.7 + egg.seed) * 5;
-    egg.py = egg.y + Math.cos(s * 3.3 + egg.seed) * 5;
-    egg.trail.push(egg.px, egg.py);
-    if (egg.trail.length > 36) egg.trail.splice(0, 2);
+    egg.px = egg.x + Math.sin(s * 2.7 + egg.seed) * 3;
+    egg.py = egg.y + Math.cos(s * 3.3 + egg.seed) * 3;
+    // 머리는 가는 쪽으로 부드럽게 돈다(멈춰 있을 때는 마지막 방향 그대로)
+    const v = Math.hypot(egg.vx, egg.vy);
+    if (v > 8) {
+      const da = Math.atan2(egg.vy, egg.vx) - egg.ang;
+      egg.ang += Math.atan2(Math.sin(da), Math.cos(da)) * Math.min(1, dt * 7);
+    }
+    // 엔진 자리에 불꽃 자국을 남긴다. 멈춰 있으면 자국이 차례로 사라진다.
+    if (v > 15) {
+      const k = 11 * shipScale();
+      egg.trail.push(egg.px - Math.cos(egg.ang) * k, egg.py - Math.sin(egg.ang) * k);
+      if (egg.trail.length > 36) egg.trail.splice(0, 2);
+    } else if (egg.trail.length) egg.trail.splice(0, 2);
   };
   const drawEgg = (s) => {
     for (let k = 0; k < sparks.length; k++) {
@@ -905,24 +918,23 @@ function startDotWave(canvas) {
     }
     if (egg.alive) {
       const x = egg.px, y = egg.py, a = egg.fade;
-      // 지나온 자리에 옅은 노란 꼬리
+      // 지나온 자리에 엔진 불꽃 자국(노랑)
       const n = egg.trail.length;
       for (let k = 0; k < n; k += 2) {
         const f = k / n;
-        ctx.globalAlpha = a * f * 0.4;
+        ctx.globalAlpha = a * f * 0.45;
         ctx.fillStyle = '#FFB300';
-        ctx.beginPath(); ctx.arc(egg.trail[k], egg.trail[k + 1], 0.8 + f * 3.4, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(egg.trail[k], egg.trail[k + 1], 0.6 + f * 2.6, 0, 6.2832); ctx.fill();
       }
-      const pulse = 0.5 + 0.5 * Math.sin(s * 5.4);
-      const g0 = 26 + pulse * 8;
+      // 찾기 쉽게 둘레에 옅은 빨간 빛이 맥박 친다
+      const pulse = 0.5 + 0.5 * Math.sin(s * 5.4), g0 = 30 + pulse * 6;
       const g = ctx.createRadialGradient(x, y, 0, x, y, g0);
-      g.addColorStop(0, 'rgba(255,0,0,0.55)'); g.addColorStop(0.4, 'rgba(255,0,0,0.2)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+      g.addColorStop(0, 'rgba(255,0,0,0.24)'); g.addColorStop(1, 'rgba(255,0,0,0)');
       ctx.globalAlpha = a; ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(x, y, g0, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = '#FF0000';
-      ctx.beginPath(); ctx.arc(x, y, 5.6 + pulse * 1.2, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath(); ctx.arc(x - 1.5, y - 1.5, 2.1, 0, 6.2832); ctx.fill();
+      const v = Math.hypot(egg.vx, egg.vy);
+      drawShip(ctx, x, y, egg.ang + (egg.rest > 0 ? Math.sin(s * 2.2) * 0.12 : 0), shipScale(),
+               0.2 + Math.min(1, v / 120) * (0.6 + 0.2 * Math.sin(s * 47)), a);
     }
     ctx.globalAlpha = 1;
   };
@@ -961,7 +973,7 @@ function startDotWave(canvas) {
             hot = f;
           }
         }
-        // 숨은 빛 점 둘레의 점도 살짝 밀려나며 빨갛게 물든다(가까이 오면 물결이 먼저 알려 준다)
+        // 숨은 우주선 둘레의 점도 살짝 밀려나며 빨갛게 물든다(가까이 오면 물결이 먼저 알려 준다)
         {
           const dx = x - ex, dy = y - ey, d2 = dx * dx + dy * dy;
           if (d2 < 8100) {
@@ -1025,7 +1037,7 @@ function startDotWave(canvas) {
   };
   const onDown = (e) => {
     if (reduce || (e.target.closest && e.target.closest('a, button, .ieg-panel, .ieg-nav, .ieg-rail, .ieg-modal, .ieg-egg'))) return;
-    // 숨은 빛 점을 눌렀으면 잡는다(손가락은 조금 넉넉하게)
+    // 숨은 우주선을 눌렀으면 잡는다(손가락은 조금 넉넉하게)
     if (egg.alive && !egg.busy && Math.hypot(e.clientX - egg.px, e.clientY - egg.py) < (e.pointerType === 'mouse' ? 28 : 40)) {
       catchEgg();
       return;
@@ -1057,17 +1069,51 @@ function startDotWave(canvas) {
   };
 }
 
-// ── 이스터에그 피날레: 숨은 빛 점을 잡으면 화면이 변신하며 입체 IEG 로고가 나온다(약 8초) ──
-//  0.0~1.2초  패널이 덜컹거리다 문처럼 열리며 물러나고, 잡은 자리의 빛이 가운데로 날아온다
-//  0.7~1.35초 빛이 금속 블록(작은 정육면체 수백 개)으로 굳으며 돌아 들어온다
+// ── 이스터에그의 작은 우주선(위에서 본 모습) ──
+// (x, y)가 가운데이고 ang(라디안) 쪽으로 머리를 둔다. s: 크기 배율(1이면 길이 약 24px), fl: 엔진 불꽃 세기(0~1), a: 불투명도.
+// 몸통 #333333, 조종석·날개 끝 빨강, 엔진 불꽃 노랑→빨강.
+function drawShip(ctx, x, y, ang, s, fl, a) {
+  if (s <= 0.01 || a <= 0.01) return;
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
+  ctx.globalAlpha = a;
+  const L = 5 + 11 * Math.max(0, Math.min(1, fl));
+  const fg = ctx.createLinearGradient(-8, 0, -8 - L, 0);
+  fg.addColorStop(0, 'rgba(255,179,0,0.95)'); fg.addColorStop(0.55, 'rgba(255,0,0,0.55)'); fg.addColorStop(1, 'rgba(255,0,0,0)');
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.moveTo(-7.5, -2.8); ctx.quadraticCurveTo(-8 - L * 1.15, 0, -7.5, 2.8); ctx.closePath(); ctx.fill();
+  // 뒤로 젖힌 날개
+  ctx.fillStyle = '#4B4B4F';
+  ctx.beginPath(); ctx.moveTo(5, -2.2); ctx.lineTo(-6.5, -11); ctx.lineTo(-9.5, -10.4); ctx.lineTo(-6, -2.6); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(5, 2.2); ctx.lineTo(-6.5, 11); ctx.lineTo(-9.5, 10.4); ctx.lineTo(-6, 2.6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath(); ctx.arc(-8, -10.7, 1.3, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(-8, 10.7, 1.3, 0, 6.2832); ctx.fill();
+  // 몸통
+  const bg = ctx.createLinearGradient(0, -4, 0, 4);
+  bg.addColorStop(0, '#6A6A6F'); bg.addColorStop(0.45, '#333333'); bg.addColorStop(1, '#1C1C1E');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.moveTo(15, 0); ctx.quadraticCurveTo(7, -4.8, -8.5, -3.6); ctx.lineTo(-8.5, 3.6); ctx.quadraticCurveTo(7, 4.8, 15, 0); ctx.closePath(); ctx.fill();
+  // 조종석
+  ctx.fillStyle = '#FF0000';
+  ctx.beginPath(); ctx.ellipse(4.5, 0, 3.8, 1.8, 0, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath(); ctx.ellipse(5.6, -0.6, 1.4, 0.55, 0, 0, 6.2832); ctx.fill();
+  ctx.restore();
+}
+
+// ── 이스터에그 피날레: 숨은 우주선을 잡으면 화면이 변신하며 입체 IEG 로고가 나온다(약 8.4초) ──
+//  0.0~1.2초  패널이 덜컹거리다 문처럼 열리며 물러나고, 잡힌 우주선이 원을 그리며 가운데로 날아온다
+//  0.7~1.35초 우주선이 금속 블록(작은 정육면체 수백 개)으로 변신하며 돌아 들어온다
 //  1.35~3.0초 블록이 I, E, G 순서로 기계처럼 펼쳐진다. 정육면체가 세 축을 차례로 미끄러지며 구르다가
 //             제자리에 맞물리면 하얗게 번쩍이고 빨갛게 잠긴다(글자마다 철컥)
-//  3.15초     정면으로 돌아오며 쾅: 흔들림·번쩍임·배경 충격파
-//  3.3~7.0초  매끈한 입체 로고로 바뀌어 한 번 돌며 두께를 보여 주고, IEG가 비켜서며 NEWS가 펼쳐진다
-//  7.0~8.1초  로고가 머리 막대의 제호 자리로 날아가 앉고 패널이 제자리로 돌아온다
+//  3.15초     정면으로 돌아오며 쾅: 흔들림·번쩍임·배경 충격파. 블록 사이 틈이 메워져 한 덩어리가 된다
+//  3.35~4.0초 용접 빛줄기가 글자를 왼쪽에서 오른쪽으로 훑고, 지나간 자리는 매끈한 입체 글자로 바뀐다
+//  4.1~7.3초  입체 로고가 한 번 돌며 두께를 보여 주고, IEG가 비켜서며 NEWS가 펼쳐진다
+//  7.3~8.4초  로고가 머리 막대의 제호 자리로 날아가 앉고(제호 둘레로 둥근 테가 퍼진다) 패널이 제자리로 돌아온다
 // 화면을 누르거나 Esc를 누르면 건너뛴다. 모든 것은 화면 위 덮개(.ieg-egg) 안에서 그리며,
 // 끝나면 덮개를 지우고 패널 등에 준 스타일을 모두 되돌린 뒤 opt.done()을 부른다.
-// opt: { x, y: 빛 점을 잡은 자리, ripple(x, y, 세기): 배경 물결에 충격파, done() }
+// opt: { x, y, ang: 우주선을 잡은 자리와 머리 방향, ripple(x, y, 세기): 배경 물결에 충격파, done() }
 function playIegFinale(opt) {
   if (document.querySelector('.ieg-egg')) return;
   opt = opt || {};
@@ -1087,19 +1133,20 @@ function playIegFinale(opt) {
     ball0: 0.1, ball1: 0.75,        // 빛이 가운데로
     block0: 0.7,                    // 블록이 생겨 돌아 들어옴
     unfold: 1.35,                   // 펼침 시작. 글자마다 0.3초씩 늦게
-    cam1: 2.85, lock: 3.15,         // 카메라가 정면으로 → 쾅
-    dom: 3.3,                       // 매끈한 로고로 바뀜
-    swing0: 3.7, swing1: 6.3,       // 한 번 돌아 두께를 보여 줌
-    slide0: 4.0, slide1: 4.4,       // IEG가 비켜섬
-    news: 4.3,                      // NEWS가 한 글자씩 펼쳐짐
-    shine0: 5.1, shine1: 5.75,      // 앞면에 빛이 한 번 스쳐 지나감
-    fly: 7.0, land: 7.85, end: 8.1  // 제호 자리로 날아가 앉음(패널은 7.0~7.9초에 돌아옴)
+    cam1: 2.85, lock: 3.15,         // 카메라가 정면으로 → 쾅, 블록 사이 틈이 메워져 한 덩어리가 됨
+    weld0: 3.35, weld1: 4.0,        // 용접 빛줄기가 왼쪽에서 오른쪽으로 훑고, 지나간 자리는 매끈한 글자로 바뀜
+    swing0: 4.1, swing1: 6.7,       // 한 번 돌아 두께를 보여 줌
+    slide0: 4.4, slide1: 4.8,       // IEG가 비켜섬
+    news: 4.7,                      // NEWS가 한 글자씩 펼쳐짐
+    shine0: 5.5, shine1: 6.15,      // 앞면에 빛이 한 번 스쳐 지나감
+    fly: 7.3, land: 8.15, end: 8.4  // 제호 자리로 날아가 앉음(패널은 7.3~8.2초에 돌아옴)
   };
   const SEG = 0.24, GAP = 0.02;     // 정육면체가 한 번 움직이는 시간과 그 사이 틈
   const ripple = (x, y, p) => { if (opt.ripple) opt.ripple(x, y, p); };
   const mark = document.querySelector('.ieg-mark');
 
-  // ── 덮개: 밝은 무대(veil) / 정육면체·빛·불꽃 캔버스 / 매끈한 로고(stage) / 번쩍임 ──
+  // ── 덮개: 밝은 무대(veil) / 아래 캔버스(그림자·우주선·정육면체) / 매끈한 로고(stage) /
+  //    위 캔버스(불꽃·테·용접 빛줄기 — 매끈한 글자 위에도 보여야 한다) / 번쩍임 ──
   const ov = document.createElement('div');
   ov.className = 'ieg-egg';
   ov.setAttribute('aria-hidden', 'true');
@@ -1107,14 +1154,16 @@ function playIegFinale(opt) {
   const veil = document.createElement('div'); veil.className = 'ieg-egg-veil';
   const cv = document.createElement('canvas'); cv.className = 'ieg-egg-cv';
   const stage = document.createElement('div'); stage.className = 'ieg-egg-stage';
+  const cv2 = document.createElement('canvas'); cv2.className = 'ieg-egg-cv';
   const flash = document.createElement('div'); flash.className = 'ieg-egg-flash';
-  ov.append(veil, cv, stage, flash);
+  ov.append(veil, cv, stage, cv2, flash);
   document.body.appendChild(ov);
   stage.style.visibility = 'hidden';
-  const ctx = cv.getContext('2d');
+  const ctx = cv.getContext('2d'), ctx2 = cv2.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  [cv, cv2].forEach((el) => { el.width = Math.round(W * dpr); el.height = Math.round(H * dpr); });
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // 제호와 같은 글꼴로 글자를 실제로 놓아 보고, 글자마다의 펜 자리(l, r)·글줄(base)·글자 상자 위쪽(top)을 잰다
   let FAMILY = '';
@@ -1254,15 +1303,18 @@ function playIegFinale(opt) {
     }
     st.x = v.P[9]; st.y = v.P[10]; st.z = v.P[11];
   };
-  const drawVoxels = (t, yaw, pitch, alpha) => {
+  // clipX: 용접 빛줄기의 화면 x. 그 오른쪽(아직 지나가지 않은 쪽)만 그린다(null이면 전부).
+  const drawVoxels = (t, yaw, pitch, alpha, clipX) => {
     if (alpha <= 0.01) return;
     const cy0 = Math.cos(yaw), sy0 = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    // 쾅 하는 순간 블록 사이 틈이 메워지고 이음선이 옅어져 한 덩어리 글자가 된다
+    const seal = eOut(seg(t, T.lock - 0.05, T.lock + 0.2));
     faces.length = 0;
     for (let n = 0; n < vox.length; n++) {
       const v = vox[n];
       vState(v, t);
       if (st.sc <= 0.02) continue;
-      const hs = c * 0.46 * st.sc, ca = Math.cos(st.ang), sa = Math.sin(st.ang);
+      const hs = c * (0.46 + 0.04 * seal) * st.sc, ca = Math.cos(st.ang), sa = Math.sin(st.ang);
       for (let q = 0; q < 8; q++) {
         let ox = CORN[q * 3] * hs, oy = CORN[q * 3 + 1] * hs, oz = CORN[q * 3 + 2] * hs;
         if (st.ax >= 0) { rot(st.ax, ca, sa, ox, oy, oz); ox = tmp[0]; oy = tmp[1]; oz = tmp[2]; }
@@ -1291,37 +1343,38 @@ function playIegFinale(opt) {
       }
     }
     faces.sort((p, q) => q.d - p.d);
+    ctx.save();
+    if (clipX != null) { ctx.beginPath(); ctx.rect(clipX, 0, W, H); ctx.clip(); }
     ctx.globalAlpha = alpha;
-    ctx.lineWidth = 0.7; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    ctx.lineWidth = 0.7; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(0,0,0,' + (0.22 - 0.15 * seal).toFixed(3) + ')';
     for (let k = 0; k < faces.length; k++) {
       const p = faces[k].pts;
       ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
       ctx.fillStyle = faces[k].col; ctx.fill(); ctx.stroke();
     }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   };
 
-  // ── 잡은 자리에서 가운데로 날아오는 빛 ──
+  // ── 잡힌 우주선: 머리 방향 그대로 출발해 원을 그리며 가운데로 날아오고(점점 커진다), 닿으면 블록으로 변신한다 ──
   const ox0 = opt.x != null ? opt.x : cx, oy0 = opt.y != null ? opt.y : cy;
-  const qx = (ox0 + cx) / 2 + (cy - oy0) * 0.3, qy = (oy0 + cy) / 2 - (cx - ox0) * 0.3;
-  const ballAt = (u) => { const a = (1 - u) * (1 - u), b = 2 * u * (1 - u), d = u * u; return [a * ox0 + b * qx + d * cx, a * oy0 + b * qy + d * cy]; };
-  const drawBall = (t, fade) => {
-    const u = eIO(seg(t, T.ball0, T.ball1)), shrink = 1 - seg(t, T.ball1, T.ball1 + 0.3);
-    if (shrink <= 0) return;
+  const sa0 = opt.ang != null ? opt.ang : Math.atan2(cy - oy0, cx - ox0);
+  const reach = Math.max(80, Math.hypot(cx - ox0, cy - oy0) * 0.6);
+  const qx = ox0 + Math.cos(sa0) * reach, qy = oy0 + Math.sin(sa0) * reach;
+  const shipAt = (u) => { const a = (1 - u) * (1 - u), b = 2 * u * (1 - u), d = u * u; return [a * ox0 + b * qx + d * cx, a * oy0 + b * qy + d * cy]; };
+  const shipDir = (u) => Math.atan2((1 - u) * (qy - oy0) + u * (cy - qy), (1 - u) * (qx - ox0) + u * (cx - qx));
+  const S0 = W < 700 ? 0.95 : 1.1;
+  const drawFlyShip = (t, fade) => {
+    const u = eIO(seg(t, T.ball0, T.ball1)), out = seg(t, T.ball1, T.ball1 + 0.22);
+    if (out >= 1) return;
     for (let k = 10; k >= 1; k--) {
-      const uu = Math.max(0, u - k * 0.025), p = ballAt(uu);
-      ctx.globalAlpha = (1 - k / 11) * 0.4 * shrink * fade;
-      ctx.fillStyle = '#FFB300';
-      ctx.beginPath(); ctx.arc(p[0], p[1], (3 + 10 * uu) * (1 - k / 14), 0, 2 * PI); ctx.fill();
+      const uu = Math.max(0, u - k * 0.022), p = shipAt(uu);
+      ctx.globalAlpha = (1 - k / 11) * 0.45 * (1 - out) * fade;
+      ctx.fillStyle = k % 2 ? '#FFB300' : '#FF0000';
+      ctx.beginPath(); ctx.arc(p[0], p[1], (1.5 + 5 * uu) * (1 - k / 13), 0, 2 * PI); ctx.fill();
     }
-    const p = ballAt(u), r = Math.max(0, (6 + 12 * u) * shrink + 1.5 * Math.sin(t * 30));
-    const g = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r * 3.4 + 1);
-    g.addColorStop(0, 'rgba(255,0,0,0.6)'); g.addColorStop(0.35, 'rgba(255,0,0,0.22)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-    ctx.globalAlpha = fade; ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(p[0], p[1], r * 3.4 + 1, 0, 2 * PI); ctx.fill();
-    ctx.fillStyle = '#FF0000'; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 2 * PI); ctx.fill();
-    ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); ctx.arc(p[0] - r * 0.3, p[1] - r * 0.3, r * 0.38, 0, 2 * PI); ctx.fill();
     ctx.globalAlpha = 1;
+    const p = shipAt(u);
+    drawShip(ctx, p[0], p[1], shipDir(u), S0 * (1 + 1.6 * u) * (1 - out), 0.75 + 0.25 * Math.sin(t * 50), fade * (1 - out));
   };
   // ── 불꽃·고리·바닥 그림자 ──
   const sparks = [], rings = [], clanks = [];
@@ -1349,23 +1402,34 @@ function playIegFinale(opt) {
       p.x += p.vx * dt; p.y += p.vy * dt;
     }
   };
+  // 불꽃과 테는 위 캔버스(ctx2)에 그려 매끈한 글자 위에서도 보인다
   const drawSparks = (fade) => {
-    ctx.lineCap = 'round';
+    ctx2.lineCap = 'round';
     for (let k = 0; k < sparks.length; k++) {
       const p = sparks[k], f = 1 - p.age / p.life;
-      ctx.globalAlpha = f * fade; ctx.strokeStyle = p.col; ctx.lineWidth = 1 + f * 2;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035); ctx.stroke();
+      ctx2.globalAlpha = f * fade; ctx2.strokeStyle = p.col; ctx2.lineWidth = 1 + f * 2;
+      ctx2.beginPath(); ctx2.moveTo(p.x, p.y); ctx2.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035); ctx2.stroke();
     }
-    ctx.globalAlpha = 1;
+    ctx2.globalAlpha = 1;
   };
+  // 테: 원(x, y, r0→r1) 또는 둥근 막대 모양(box: 글자 경계 [x0, y0, x1, y1]를 grow만큼 넓히며 퍼진다)
   const drawRings = (t, fade) => {
     for (let k = 0; k < rings.length; k++) {
       const g = rings[k], u = seg(t, g.t, g.t + g.dur);
       if (u <= 0 || u >= 1) continue;
-      ctx.globalAlpha = (1 - u) * 0.9 * fade; ctx.strokeStyle = g.col; ctx.lineWidth = g.w * (1 - u) + 0.5;
-      ctx.beginPath(); ctx.arc(g.x, g.y, lerp(g.r0, g.r1, eOut(u)), 0, 2 * PI); ctx.stroke();
+      ctx2.globalAlpha = (1 - u) * 0.9 * fade; ctx2.strokeStyle = g.col; ctx2.lineWidth = g.w * (1 - u) + 0.5;
+      ctx2.beginPath();
+      if (g.box) {
+        const e = lerp(2, g.grow, eOut(u)), x0 = g.box[0] - e, y0 = g.box[1] - e, x1 = g.box[2] + e, y1 = g.box[3] + e;
+        const r = (y1 - y0) / 2;
+        ctx2.moveTo(x0 + r, y0); ctx2.lineTo(x1 - r, y0); ctx2.arc(x1 - r, y0 + r, r, -PI / 2, PI / 2);
+        ctx2.lineTo(x0 + r, y1); ctx2.arc(x0 + r, y0 + r, r, PI / 2, PI * 1.5); ctx2.closePath();
+      } else {
+        ctx2.arc(g.x, g.y, lerp(g.r0, g.r1, eOut(u)), 0, 2 * PI);
+      }
+      ctx2.stroke();
     }
-    ctx.globalAlpha = 1;
+    ctx2.globalAlpha = 1;
   };
   const glyphW = ax1 - ax0, glyphH = ay1 - ay0;
   const lineGW = ml.ch[7].r - ml.ch[0].l - (ax0 - mb.ch[0].l) * s1;
@@ -1384,7 +1448,7 @@ function playIegFinale(opt) {
   };
 
   // ── 매끈한 입체 로고(DOM): 같은 글자를 얇게 여러 겹 쌓아 두께를 만든다. 맨 앞 한 겹만 제 색(#FF0000, #333333) ──
-  const depth = c * 1.92;   // 정육면체 두 층의 앞면~뒷면 두께와 같다
+  const depth = c * 2;      // 틈이 메워진 정육면체 두 층의 앞면~뒷면 두께와 같다
   const mixc = (a, b, u) => 'rgb(' + Math.round(lerp(a[0], b[0], u)) + ',' + Math.round(lerp(a[1], b[1], u)) + ',' + Math.round(lerp(a[2], b[2], u)) + ')';
   const layer = (txt, F, left, top, color) => {
     const el = document.createElement('div');
@@ -1405,6 +1469,38 @@ function playIegFinale(opt) {
   shine.classList.add('ieg-egg-shine');
   grpI.appendChild(shine);
   stage.appendChild(grpI);
+  const bigW = layers[0].el.offsetWidth;
+
+  // ── 용접 빛줄기: 정면에 선 블록 글자를 왼쪽에서 오른쪽으로 훑는다. 지나간 자리는 매끈한 글자, 아직인 자리는 블록 글자 ──
+  const wx0 = bigL + ax0 - c * 1.5, wx1 = bigL + ax1 + c * 1.5;
+  const weldX = (t) => { const u = seg(t, T.weld0, T.weld1); return lerp(wx0, wx1, u * u * (3 - 2 * u)); };
+  const drawWeld = (t) => {
+    if (t < T.weld0 || t > T.weld1 + 0.2) return;
+    const x = weldX(t), a = t > T.weld1 ? 1 - seg(t, T.weld1, T.weld1 + 0.2) : clamp01((t - T.weld0) / 0.08);
+    const top = bigT + ay0 - FB * 0.16, bot = bigT + ay1 + FB * 0.16, hh = (bot - top) / 2;
+    ctx2.save();
+    ctx2.globalAlpha = a; ctx2.translate(x, top + hh); ctx2.scale(1, hh / 38);
+    const g = ctx2.createRadialGradient(0, 0, 0, 0, 0, 38);
+    g.addColorStop(0, 'rgba(255,179,0,1)'); g.addColorStop(0.35, 'rgba(255,179,0,0.45)'); g.addColorStop(0.6, 'rgba(255,0,0,0.2)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx2.fillStyle = g; ctx2.beginPath(); ctx2.arc(0, 0, 38, 0, 2 * PI); ctx2.fill();
+    ctx2.restore();
+    const gc = ctx2.createLinearGradient(0, top, 0, bot);
+    gc.addColorStop(0, 'rgba(255,255,255,0)'); gc.addColorStop(0.18, '#FFFFFF'); gc.addColorStop(0.82, '#FFFFFF'); gc.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx2.globalAlpha = a; ctx2.fillStyle = gc; ctx2.fillRect(x - 2, top, 4, bot - top);
+    ctx2.globalAlpha = 1;
+  };
+  // 빛줄기가 글자에 닿는 자리에서만 불꽃이 튄다(글자 모양 그림에서 그 자리가 칠해져 있는지 본다)
+  const weldSparks = (t) => {
+    const x = weldX(t), ex = Math.floor(pad + x - bigL);
+    for (let k = 0; k < 4; k++) {
+      const y = bigT + ay0 + Math.random() * (ay1 - ay0), ey = Math.floor(pad + y - bigT);
+      if (ex < 0 || ex >= ow || ey < 0 || ey >= oh || px[(ey * ow + ex) * 4 + 3] < 128) continue;
+      const a = -PI / 2 + (Math.random() - 0.7) * 2.2, sp = 120 + Math.random() * 300;
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, age: 0, life: 0.25 + Math.random() * 0.35,
+                    col: k % 3 === 0 ? '#FFFFFF' : k % 3 === 1 ? '#FFB300' : '#FF0000' });
+    }
+  };
+  let clipOn = false;
   // IEG NEWS 한 줄: 글자 모양의 가운데가 화면 가운데에 온다. NEWS는 글자마다 따로 세워 한 장씩 펼친다.
   const lineL = cx - (ml.ch[0].l + (ax0 - mb.ch[0].l) * s1 + ml.ch[7].r) / 2;
   const lineT = cy - (ay0 + ay1) / 2 * s1;
@@ -1435,15 +1531,28 @@ function playIegFinale(opt) {
     const r = rg.getBoundingClientRect(), Fh = parseFloat(getComputedStyle(mark).fontSize);
     if (!r.width || !Fh) return null;
     const s = Fh / FL, top = r.top - ml.top / FL * Fh;
-    rg.setEnd(tn, Math.min(3, tn.length));
-    const all = rg.getBoundingClientRect();
-    return { s, tx: r.left - s * (lineL + ml.ch[0].l), ty: top - s * lineT, x: all.left + all.width / 2, y: all.top + all.height / 2 };
+    // 제호 'IEG NEWS' 전체의 글자 모양 경계(I 왼쪽 ~ S 오른쪽, 대문자 위 ~ 아래). 내려앉을 때의 둥근 테가 이 둘레로 퍼진다.
+    const k2 = Fh / FL, kb = Fh / FB;
+    const box = [r.left + (ax0 - mb.ch[0].l) * kb - 6, top + ay0 * kb - 6, r.left + (ml.ch[7].r - ml.ch[0].l) * k2 + 6, top + ay1 * kb + 6];
+    return { s, tx: r.left - s * (lineL + ml.ch[0].l), ty: top - s * lineT, box, x: (box[0] + box[2]) / 2, y: (box[1] + box[3]) / 2 };
   };
   const applyLogo = (t) => {
-    if (t < T.dom) return;
+    if (t < T.weld0) return;
     stage.style.visibility = '';
+    // 용접하는 동안은 빛줄기가 지나간 왼쪽만 보인다. 겹마다 원근 배율이 달라, 화면의 같은 x가 되도록 겹 좌표로 바꿔 자른다.
+    if (t < T.weld1) {
+      const xs = weldX(t);
+      for (let k = 0; k < layers.length; k++) {
+        const lx = cx + (xs - cx) * (D - layers[k].z) / D;
+        layers[k].el.style.clipPath = 'inset(-60% ' + (bigL + bigW - lx).toFixed(1) + 'px -60% -60%)';
+      }
+      clipOn = true;
+    } else if (clipOn) {
+      for (let k = 0; k < layers.length; k++) layers[k].el.style.clipPath = '';
+      clipOn = false;
+    }
     let yaw = 0, pitch = 0;
-    const K = [[T.swing0, 0, 0], [4.55, -28, 8], [5.5, 16, -5], [T.swing1, 0, 0]];
+    const K = [[T.swing0, 0, 0], [4.95, -28, 8], [5.9, 16, -5], [T.swing1, 0, 0]];
     for (let k = 0; k < K.length - 1; k++) {
       if (t >= K[k][0] && t < K[k + 1][0]) {
         const e = eIO(seg(t, K[k][0], K[k + 1][0]));
@@ -1546,9 +1655,14 @@ function playIegFinale(opt) {
       ripple(cx, cy, 1);
       if (mark) mark.style.visibility = 'hidden';   // 머리 막대의 제호는 큰 로고가 날아와 앉을 때 다시 보인다
     }
+    // 내려앉으면 제호 'IEG NEWS' 전체를 둘러싼 둥근 테가 가운데에서 고르게 퍼진다(노랑, 이어서 옅은 빨강)
     if (t >= T.land && once('land')) {
       if (mark) mark.style.visibility = '';
-      if (hd) { rings.push({ t, x: hd.x, y: hd.y, r0: 4, r1: 70, dur: 0.45, col: '#FFB300', w: 4 }); ripple(hd.x, hd.y, 0.4); }
+      if (hd) {
+        rings.push({ t, box: hd.box, grow: 16, dur: 0.6, col: '#FFB300', w: 3 });
+        rings.push({ t: t + 0.12, box: hd.box, grow: 28, dur: 0.6, col: '#FF0000', w: 1.5 });
+        ripple(hd.x, hd.y, 0.4);
+      }
     }
   };
   let raf = 0, t0 = 0, jump = 0, lastT = 0, over = false;
@@ -1566,10 +1680,10 @@ function playIegFinale(opt) {
     html.style.overflow = prevOverflow;
     if (opt.done) opt.done();
   };
-  // 건너뛰기: 정육면체 단계면 거두어들이고(패널이 지금 자리에서 돌아온다), 매끈한 로고가 나온 뒤면 바로 제호로 날아간다
+  // 건너뛰기: 정육면체 단계면 거두어들이고(패널이 지금 자리에서 돌아온다), 용접이 시작된 뒤면 바로 제호로 날아간다
   const skip = () => {
     if (over || abortAt >= 0 || lastT < 0.6) return;
-    if (lastT < T.dom) { const p = panelP(lastT); abortAt = lastT; pAbort = p; stage.style.visibility = 'hidden'; }
+    if (lastT < T.weld0) { const p = panelP(lastT); abortAt = lastT; pAbort = p; stage.style.visibility = 'hidden'; }
     else if (lastT < T.fly) jump += T.fly - lastT;
   };
   const onKey = (e) => { if (e.key === 'Escape') skip(); };
@@ -1587,15 +1701,17 @@ function playIegFinale(opt) {
     ov.style.transform = shk > 0.05 ? 'translate(' + (Math.sin(t * 97) * shk).toFixed(2) + 'px,' + (Math.cos(t * 89) * shk).toFixed(2) + 'px)' : '';
     const fade = abortAt >= 0 ? 1 - seg(t, abortAt, abortAt + 0.35) : 1;
     veil.style.opacity = String(eOut(seg(t, 0.3, 1)) * (1 - seg(t, T.fly + 0.1, T.fly + 0.7)) * fade);
-    flash.style.opacity = t >= T.lock && abortAt < 0 ? String(0.9 * Math.exp(-(t - T.lock) * 6)) : '0';
+    flash.style.opacity = t >= T.lock && abortAt < 0 ? String(0.75 * Math.exp(-(t - T.lock) * 6)) : '0';
     ctx.clearRect(0, 0, W, H);
+    ctx2.clearRect(0, 0, W, H);
     drawShadow(t, fade);
-    if (t >= T.ball0 && t < T.ball1 + 0.3) drawBall(t, fade);
-    if (t >= T.block0 && t < T.dom + 0.3) { const cam = camAt(t); drawVoxels(t, cam[0], cam[1], fade * (1 - seg(t, T.dom, T.dom + 0.3))); }
+    if (t < T.ball1 + 0.3) drawFlyShip(t, fade);
+    if (t >= T.block0 && t < T.weld1) { const cam = camAt(t); drawVoxels(t, cam[0], cam[1], fade, t >= T.weld0 ? weldX(t) : null); }
+    if (abortAt < 0 && t >= T.weld0 && t < T.weld1) weldSparks(t);
     stepSparks(dt);
     drawSparks(fade);
     drawRings(t, fade);
-    if (abortAt < 0) applyLogo(t);
+    if (abortAt < 0) { drawWeld(t); applyLogo(t); }
     raf = requestAnimationFrame(frame);
   };
   ov.addEventListener('pointerdown', skip);

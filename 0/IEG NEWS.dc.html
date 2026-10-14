@@ -458,7 +458,7 @@
 
   /* ── 이스터에그: 숨은 IEG를 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
   /* 홈 첫 진입 변신 장면 직전: 항목(패널)과 날짜 게이지를 숨겨 빈 무대에서 시작한다 */
-  html.ieg-pre .ieg-panel, html.ieg-pre .ieg-rail { opacity: 0; }
+  html.ieg-pre .ieg-panel, html.ieg-pre .ieg-rail, html.ieg-pre .ieg-nav { opacity: 0; }
   .ieg-egg { position: fixed; inset: 0; z-index: 60; overflow: hidden; perspective-origin: 50% 50%; touch-action: none; }
   .ieg-egg-veil {
     position: absolute; inset: 0; opacity: 0; pointer-events: none;
@@ -1593,57 +1593,26 @@ function playIegFinale(opt) {
     });
   };
 
-  // ── 패널: 덜컹거리다 문처럼 열리며 물러나고(옆 패널은 바깥 모서리를 축으로, 넓은 패널은 위나 아래 모서리를 축으로),
-  //    끝에 살짝 지나쳤다 제자리에 철컥 돌아온다. 화면 밖 패널은 건드리지 않는다. ──
+  // ── 화면 비우기: 장면은 깔끔한 전체화면 빈 무대에서 한다. 패널·머리 막대·게이지가 부드럽게 사라졌다가(첫 진입은 처음부터 숨김),
+  //    끝에 머리 막대가 먼저 나타나 로고가 제호 자리에 앉고, 이어 패널이 들어온다. 움직임 없이 투명도만 바꾼다. ──
   const html = document.documentElement, prevOverflow = html.style.overflow;
   html.style.overflow = 'hidden';
-  const parts = [], pars = [];
-  document.querySelectorAll('.ieg-panel').forEach((el) => {
-    const r = el.getBoundingClientRect();
-    if (r.bottom <= 0 || r.top >= H || r.right <= 0 || r.left >= W) return;
-    const vt = Math.max(0, r.top), vb = Math.min(H, r.bottom);
-    let kind, tox, toy;
-    if (r.width < W * 0.7) { kind = (r.left + r.right) / 2 < cx ? 'L' : 'R'; tox = kind === 'L' ? 0 : r.width; toy = (vt + vb) / 2 - r.top; }
-    else { kind = (vt + vb) / 2 < cy && vb < H * 0.62 ? 'T' : 'B'; tox = r.width / 2; toy = (kind === 'T' ? vt : vb) - r.top; }
-    el.style.transformOrigin = tox + 'px ' + toy + 'px';
-    el.style.transition = 'none';
-    parts.push({ el, kind, seed: Math.random() * 50 });
-    const p = el.parentElement;
-    if (p && pars.indexOf(p) < 0) {
-      const pr = p.getBoundingClientRect();
-      p.style.perspective = D + 'px';
-      p.style.perspectiveOrigin = (cx - pr.left) + 'px ' + (cy - pr.top) + 'px';
-      pars.push(p);
-    }
-  });
-  const extras = Array.from(document.querySelectorAll('.ieg-rail, .ieg-top'));
-  let abortAt = -1, pAbort = 0;
-  const panelP = (t) => {
-    if (abortAt >= 0) return pAbort * (1 - eOut(seg(t, abortAt, abortAt + 0.6)));
-    // 첫 진입(intro): 패널은 처음부터 물러나 있어(보이지 않음) 빈 무대에서 시작하고, 끝에 들어온다
-    if (opt.intro && t < T.fly) return 1;
-    if (t < T.fly0) return 0;
-    if (t < T.fly1) return eBackIn(seg(t, T.fly0, T.fly1));   // 살짝 움츠렸다가 확 물러난다
-    if (t < T.fly) return 1;
-    return 1 - eBackOut(seg(t, T.fly, T.fly + 0.9));          // 돌아오며 살짝 지나쳤다 제자리
-  };
+  const T0 = 0.75;   // 장면 시계는 여기서 시작한다(판금 조각이 곧 나타나도록 앞부분을 건너뛴다)
+  const panelsEl = Array.from(document.querySelectorAll('.ieg-panel, .ieg-rail, .ieg-top'));
+  const navEl = document.querySelector('.ieg-nav');
+  let abortAt = -1;
+  const hideAmt = (t) => opt.intro ? 1 : seg(t, T0, T0 + 0.3);
   const applyParts = (t) => {
-    const p = panelP(t), j = abortAt >= 0 || opt.intro ? 0 : t < T.fly0 ? seg(t, 0.05, T.fly0) : 1 - seg(t, T.fly0, T.fly0 + 0.2);
-    const op = String(1 - clamp01((p - 0.45) / 0.5)), dz = (-p * 260).toFixed(1);
-    parts.forEach((pt) => {
-      const jx = Math.sin(t * 83 + pt.seed) * 3 * j, jy = Math.cos(t * 71 + pt.seed) * 2 * j, jr = Math.sin(t * 59 + pt.seed) * 0.35 * j;
-      let tr = 'translate(' + jx.toFixed(2) + 'px,' + jy.toFixed(2) + 'px) rotate(' + jr.toFixed(3) + 'deg) ';
-      if (pt.kind === 'L') tr += 'translate3d(' + (-p * W * 0.16).toFixed(1) + 'px,0,' + dz + 'px) rotateY(' + (p * 78).toFixed(2) + 'deg)';
-      else if (pt.kind === 'R') tr += 'translate3d(' + (p * W * 0.16).toFixed(1) + 'px,0,' + dz + 'px) rotateY(' + (-p * 78).toFixed(2) + 'deg)';
-      else if (pt.kind === 'T') tr += 'translate3d(0,' + (-p * H * 0.1).toFixed(1) + 'px,' + dz + 'px) rotateX(' + (-p * 80).toFixed(2) + 'deg)';
-      else tr += 'translate3d(0,' + (p * H * 0.1).toFixed(1) + 'px,' + dz + 'px) rotateX(' + (p * 80).toFixed(2) + 'deg)';
-      pt.el.style.transform = tr;
-      pt.el.style.opacity = op;
-    });
-    const eo = String(1 - clamp01(p * 2.5));
-    extras.forEach((el) => { el.style.opacity = eo; });
+    let pv, nv;   // 보이는 정도(1 보임)
+    if (abortAt >= 0) { const u = seg(t, abortAt, abortAt + 0.5); pv = nv = u; }
+    else {
+      const hide = hideAmt(t);
+      nv = Math.max(1 - hide, seg(t, T.fly, T.fly + 0.4));
+      pv = Math.max(1 - hide, seg(t, T.fly + 0.5, T.land + 0.2));
+    }
+    panelsEl.forEach((el) => { el.style.opacity = String(pv); });
+    if (navEl) navEl.style.opacity = String(nv);
   };
-
   // ── 시간 진행 ──
   const fired = {};
   const once = (k) => (fired[k] ? false : (fired[k] = true));
@@ -1673,7 +1642,7 @@ function playIegFinale(opt) {
     // 내려앉을 때는 따로 효과를 주지 않는다(제호가 다시 보일 뿐)
     if (t >= T.land && once('land') && mark) mark.style.visibility = '';
   };
-  let raf = 0, t0 = 0, jump = 0, lastT = 0, over = false;
+  let raf = 0, t0 = 0, jump = T0, lastT = T0, over = false;
   const finish = () => {
     if (over) return;
     over = true;
@@ -1681,17 +1650,16 @@ function playIegFinale(opt) {
     window.removeEventListener('keydown', onKey, true);
     window.removeEventListener('resize', onResize);
     ov.remove();
-    parts.forEach((pt) => { const s = pt.el.style; s.transform = ''; s.transformOrigin = ''; s.opacity = ''; s.transition = ''; });
-    pars.forEach((p) => { p.style.perspective = ''; p.style.perspectiveOrigin = ''; });
-    extras.forEach((el) => { el.style.opacity = ''; });
+    panelsEl.forEach((el) => { el.style.opacity = ''; });
+    if (navEl) navEl.style.opacity = '';
     if (mark) mark.style.visibility = '';
     html.style.overflow = prevOverflow;
     if (opt.done) opt.done();
   };
   // 건너뛰기: 정육면체 단계면 거두어들이고(패널이 지금 자리에서 돌아온다), 용접이 시작된 뒤면 바로 제호로 날아간다
   const skip = () => {
-    if (over || abortAt >= 0 || lastT < 0.6) return;
-    if (lastT < T.weld0) { const p = panelP(lastT); abortAt = lastT; pAbort = p; stage.style.visibility = 'hidden'; }
+    if (over || abortAt >= 0 || lastT < T0 + 0.3) return;
+    if (lastT < T.weld0) { abortAt = lastT; stage.style.visibility = 'hidden'; }
     else if (lastT < T.fly) jump += T.fly - lastT;
   };
   const onKey = (e) => { if (e.key === 'Escape') skip(); };
@@ -1708,12 +1676,11 @@ function playIegFinale(opt) {
     for (let k = 0; k < clanks.length; k++) if (t >= clanks[k].t) shk += clanks[k].a * Math.exp(-(t - clanks[k].t) * 14);
     ov.style.transform = shk > 0.05 ? 'translate(' + (Math.sin(t * 97) * shk).toFixed(2) + 'px,' + (Math.cos(t * 89) * shk).toFixed(2) + 'px)' : '';
     const fade = abortAt >= 0 ? 1 - seg(t, abortAt, abortAt + 0.35) : 1;
-    veil.style.opacity = String(eOut(seg(t, 0.3, 1)) * (1 - seg(t, T.fly + 0.1, T.fly + 0.7)) * fade);
+    veil.style.opacity = String((opt.intro ? 1 : eOut(seg(t, T0, T0 + 0.4))) * (1 - seg(t, T.fly + 0.1, T.fly + 0.7)) * fade);
     flash.style.opacity = t >= T.lock && abortAt < 0 ? String(0.75 * Math.exp(-(t - T.lock) * 6)) : '0';
     ctx.clearRect(0, 0, W, H);
     ctx2.clearRect(0, 0, W, H);
     drawShadow(t, fade);
-    if (t < T.ball1 + 0.3) drawFlyIeg(t, fade);
     // 판금 조각은 다 맞물려 매끈한 로고(같은 모양·같은 자리)가 나타날 때까지 그린다
     if (t >= T.block0 && (t < T.weld0 || abortAt >= 0)) { const cam = camAt(t); drawPlates(t, cam[0], cam[1], fade); }
     stepSparks(dt);
@@ -1726,7 +1693,7 @@ function playIegFinale(opt) {
   window.addEventListener('keydown', onKey, true);
   window.addEventListener('resize', onResize);
   // 첫 진입이면 첫 프레임을 기다리지 않고 패널을 바로 숨긴 상태로 둔다(미리 숨겨 둔 클래스는 이제 뗀다)
-  if (opt.intro) applyParts(0);
+  if (opt.intro) applyParts(T0);
   html.classList.remove('ieg-pre');
   raf = requestAnimationFrame(frame);
 }

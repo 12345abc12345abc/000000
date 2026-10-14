@@ -1071,6 +1071,16 @@ function startDotWave(canvas) {
   document.addEventListener('visibilitychange', onVis);
   start();
   return {
+    // 홈페이지에 처음 들어올 때: 머리 막대의 제호 'IEG' 자리에서 IEG가 튀어나와 변신 장면을 한 번 보여 준다
+    intro() {
+      if (reduce || egg.busy || typeof playIegFinale !== 'function') return;
+      const m = document.querySelector('.ieg-mark a'), r = m ? m.getBoundingClientRect() : null;
+      const x = r ? r.left + r.width * 0.2 : w * 0.2, y = r ? r.top + r.height / 2 : 40;
+      egg.busy = true; egg.alive = false;
+      playIegFinale({ x, y, dir: Math.atan2(h / 2 - y, w / 2 - x),
+        ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
+        done: () => { egg.busy = false; egg.wait = 3.5; } });
+    },
     stop() {
       stop();
       window.removeEventListener('resize', resize);
@@ -1721,6 +1731,11 @@ class Component extends DCLogic {
   componentDidMount() {
     const fx = document.querySelector('.ieg-fx');
     this._fx = fx ? startDotWave(fx) : null;
+    // 홈페이지로 처음 들어오면(새로 불러올 때 한 번) 변신 장면을 보여 준다. 글꼴·패널이 자리 잡은 뒤 시작한다.
+    if (this._fx && this.state.view === 'home') {
+      const go = () => { this._introT = setTimeout(() => { if (this.state.view === 'home' && this._fx) this._fx.intro(); }, 350); };
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(go); else go();
+    }
     // PC 홈은 한 화면에 딱 맞으므로 스크롤 막대 자리를 두지 않는다(CSS html.ieg-onepage)
     document.documentElement.classList.toggle('ieg-onepage', this.state.view === 'home');
     this._onKey = (e) => {
@@ -1817,6 +1832,7 @@ class Component extends DCLogic {
     if (this._sraf) cancelAnimationFrame(this._sraf);
     if (this._ro) this._ro.disconnect();
     if (this._fx) this._fx.stop();
+    clearTimeout(this._introT);
     document.documentElement.classList.remove('ieg-onepage');
     clearTimeout(this._railT);
   }

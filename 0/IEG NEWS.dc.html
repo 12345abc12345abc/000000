@@ -839,9 +839,9 @@ function startDotWave(canvas) {
 
   // ── 숨은 IEG ──
   // wait: 다음에 나타날 때까지 남은 초, rest: 빈 곳에서 머무는 남은 초, (px, py): 흔들림까지 더한 실제 그리는 자리,
-  // tilt: 기울기(라디안), trail: 지나온 자리(노란 꼬리)
+  // tilt: 기울기(라디안)
   const egg = { alive: false, x: 0, y: 0, px: -99, py: -99, vx: 0, vy: 0, tx: 0, ty: 0, free: false, tilt: 0,
-                wait: 3.5, rest: 0, busy: false, fade: 0, seed: Math.random() * 9, trail: [] };
+                wait: 3.5, rest: 0, busy: false, fade: 0, seed: Math.random() * 9 };
   const iegScale = () => (w < 700 ? 0.9 : 1);
   const sparks = [];    // 잡을 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
   const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
@@ -868,7 +868,7 @@ function startDotWave(canvas) {
     egg.y = side === 2 ? -30 : side === 3 ? h + 30 : 120 + Math.random() * (h - 160);
     const dx = w / 2 - egg.x, dy = h / 2 - egg.y, d = Math.hypot(dx, dy) || 1;
     egg.vx = dx / d * 160; egg.vy = dy / d * 160; egg.tilt = 0;
-    egg.alive = true; egg.rest = 0; egg.fade = 0; egg.trail = [];
+    egg.alive = true; egg.rest = 0; egg.fade = 0;
     pickTarget();
   };
   const burst = (x, y) => {
@@ -918,13 +918,7 @@ function startDotWave(canvas) {
     egg.px = egg.x + Math.sin(s * 2.7 + egg.seed) * 3;
     egg.py = egg.y + Math.cos(s * 3.3 + egg.seed) * 3;
     // 글자는 바로 선 채 나는 쪽으로 살짝만 기운다(최대 약 10도)
-    const v = Math.hypot(egg.vx, egg.vy);
     egg.tilt += (Math.max(-1, Math.min(1, egg.vx / 150)) * 0.18 - egg.tilt) * Math.min(1, dt * 5);
-    // 지나온 자리에 꼬리를 남긴다. 멈춰 있으면 꼬리가 차례로 사라진다.
-    if (v > 15) {
-      egg.trail.push(egg.px, egg.py);
-      if (egg.trail.length > 36) egg.trail.splice(0, 2);
-    } else if (egg.trail.length) egg.trail.splice(0, 2);
   };
   const drawEgg = (s) => {
     for (let k = 0; k < sparks.length; k++) {
@@ -934,22 +928,8 @@ function startDotWave(canvas) {
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); ctx.stroke();
     }
     if (egg.alive) {
-      const x = egg.px, y = egg.py, a = egg.fade;
-      // 지나온 자리에 노란 꼬리
-      const n = egg.trail.length;
-      for (let k = 0; k < n; k += 2) {
-        const f = k / n;
-        ctx.globalAlpha = a * f * 0.45;
-        ctx.fillStyle = '#FFB300';
-        ctx.beginPath(); ctx.arc(egg.trail[k], egg.trail[k + 1], 0.6 + f * 2.6, 0, 6.2832); ctx.fill();
-      }
-      // 찾기 쉽게 둘레에 옅은 빨간 빛이 맥박 친다
-      const pulse = 0.5 + 0.5 * Math.sin(s * 5.4), g0 = 30 + pulse * 6;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, g0);
-      g.addColorStop(0, 'rgba(255,0,0,0.24)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-      ctx.globalAlpha = a; ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, y, g0, 0, 6.2832); ctx.fill();
-      drawIeg(ctx, x, y, iegScale() * (1 + 0.04 * Math.sin(s * 5.4)), egg.tilt, a);
+      // 꼬리·빛 없이 IEG 글자만
+      drawIeg(ctx, egg.px, egg.py, iegScale(), egg.tilt, egg.fade);
     }
     ctx.globalAlpha = 1;
   };
@@ -1218,8 +1198,8 @@ function playIegFinale(opt) {
   // 큰 IEG 글자 상자의 자리: 글자 모양의 가운데가 화면 가운데에 온다
   const bigL = cx - (ax0 + ax1) / 2, bigT = cy - (ay0 + ay1) / 2;
 
-  // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤 두 개(L=2층)
-  const c = Math.max(5, Math.round(FB * 0.058));
+  // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤로 세 개(3층). 작고 많아서(1천 개 남짓) 촘촘하다.
+  const c = Math.max(4, Math.round(FB * 0.04));
   const nx = Math.ceil((ax1 - ax0) / c), ny = Math.ceil((ay1 - ay0) / c);
   const gx = (ax0 + ax1) / 2 - nx * c / 2, gy = (ay0 + ay1) / 2 - ny * c / 2;
   const vox = [];
@@ -1233,7 +1213,7 @@ function playIegFinale(opt) {
     const ex = gx + (i + 0.5) * c;
     const li = ex < mb.ch[1].l ? 0 : ex < mb.ch[2].l ? 1 : 2;
     const X = bigL + ex - cx, Y = bigT + gy + (j + 0.5) * c - cy;
-    vox.push({ X, Y, Z: -c / 2, li }, { X, Y, Z: c / 2, li });
+    for (let k = -1; k <= 1; k++) vox.push({ X, Y, Z: k * c, li, fi: [i, j, k] });
   }
   // 처음 블록: 정육면체를 모양 순서를 지키며(왼쪽 것은 블록 왼쪽, 위 것은 위) B×B×B 상자에 채운다
   const N = vox.length, B = Math.max(1, Math.ceil(Math.cbrt(N))), slabs = Math.ceil(N / (B * B));
@@ -1244,23 +1224,44 @@ function playIegFinale(opt) {
     for (let r = 0; r * B < slab.length; r++) {
       slab.slice(r * B, r * B + B).sort((p, q) => p.Z - q.Z || p.X - q.X).forEach((v, sz) => {
         v.P = [(sx - (slabs - 1) / 2) * c, (r - (B - 1) / 2) * c, (sz - (B - 1) / 2) * c];
+        v.bi = [sx, r, sz];
       });
     }
   }
-  // 길: 위아래 → 옆 → 앞뒤 순서로 한 축씩 미끄러지며 그 축에 맞춰 90도 구른다. 글자(I, E, G)마다 0.3초씩 늦게,
-  // 같은 글자 안에서는 가운데 것부터 펼쳐진다. 마지막 칸에 닿는 시각(tEnd)에 빨갛게 잠긴다.
+  // 길: 글자마다 축 순서를 달리해(I: 위아래→옆→앞뒤, E: 앞뒤→옆→위아래, G: 옆→위아래→앞뒤) 한 축씩 미끄러지며
+  // 그 축에 맞춰 90도 구른다. 글자(I, E, G)마다 0.3초씩 늦게, 같은 글자 안에서는 가운데 것부터 펼쳐진다.
+  // 마지막 칸에 닿는 시각(tEnd)에 빨갛게 잠긴다.
+  const ORDER = [[1, 0, 2], [2, 0, 1], [0, 1, 2]], ROLL = [2, 0, 1];
   const lockAt = [0, 0, 0], cenX = [0, 0, 0], cnt = [0, 0, 0];
   vox.forEach((v) => { cenX[v.li] += v.X; cnt[v.li]++; });
   for (let li = 0; li < 3; li++) cenX[li] = cnt[li] ? cenX[li] / cnt[li] : 0;
   vox.forEach((v) => {
-    const x0 = v.P[0], y0 = v.P[1], z0 = v.P[2];
-    v.P = [x0, y0, z0, x0, v.Y, z0, v.X, v.Y, z0, v.X, v.Y, v.Z];
-    v.R = [Math.sign(v.Y - y0), Math.sign(v.X - x0), Math.sign(v.Z - z0)];
-    v.bd = Math.min(1, Math.hypot(x0, y0, z0) / (B * c * 0.87)) * 0.38;
+    const fin = [v.X, v.Y, v.Z], pts = [v.P.slice()];
+    v.R = []; v.AX = [];
+    ORDER[v.li].forEach((ax) => {
+      const a = pts[pts.length - 1], b = a.slice();
+      b[ax] = fin[ax]; v.R.push(Math.sign(b[ax] - a[ax])); v.AX.push(ROLL[ax]); pts.push(b);
+    });
+    v.P = [].concat(...pts);
+    v.bd = Math.min(1, Math.hypot(pts[0][0], pts[0][1], pts[0][2]) / (B * c * 0.87)) * 0.38;
     v.t0 = T.unfold + v.li * 0.3 + Math.min(1, Math.hypot(v.X - cenX[v.li], v.Y) / (FB * 0.6)) * 0.16 + Math.random() * 0.05;
     v.tEnd = v.t0 + 3 * SEG + 2 * GAP;
     lockAt[v.li] = Math.max(lockAt[v.li], v.tEnd);
   });
+  // 가려진 면 빼기(정육면체가 많아도 가볍게): 블록 안에서, 그리고 글자로 다 맞물린 뒤에는 이웃 정육면체와 맞붙은 면이
+  // 보이지 않는다. 면마다 그 방향의 이웃(블록 상태 nb, 글자 상태 nf)을 기억해 두고, 둘 다 멈춰 있을 때만 그 면을 건너뛴다.
+  // 면 순서는 FACES와 같다: 앞(-z) 뒤(+z) 위(-y) 아래(+y) 왼(-x) 오른(+x)
+  const NB = [[0, 0, -1], [0, 0, 1], [0, -1, 0], [0, 1, 0], [-1, 0, 0], [1, 0, 0]];
+  const keyOf = (a) => a[0] + ',' + a[1] + ',' + a[2];
+  const atB = new Map(), atF = new Map();
+  vox.forEach((v) => { atB.set(keyOf(v.bi), v); atF.set(keyOf(v.fi), v); });
+  vox.forEach((v) => {
+    v.nb = NB.map((d) => atB.get(keyOf([v.bi[0] + d[0], v.bi[1] + d[1], v.bi[2] + d[2]])) || null);
+    v.nf = NB.map((d) => atF.get(keyOf([v.fi[0] + d[0], v.fi[1] + d[1], v.fi[2] + d[2]])) || null);
+  });
+  // 블록 안에서 멈춰 있음(다 생겨났고 아직 떠나지 않음) / 글자 자리에 멈춰 있음
+  const inBlock = (v, t) => t >= T.block0 + v.bd + 0.32 && t <= v.t0;
+  const settled = (v, t) => t >= v.tEnd;
   // 카메라: 비스듬히 위에서 본 블록이 돌아 들어오고, 펼쳐지는 동안 반대편으로 돌다가 정면에 철컥 선다
   const camAt = (t) => {
     let yaw, pitch;
@@ -1298,7 +1299,7 @@ function playIegFinale(opt) {
       if (u < SEG) {
         const e = eIO(u / SEG);
         st.x = lerp(v.P[a], v.P[b], e); st.y = lerp(v.P[a + 1], v.P[b + 1], e); st.z = lerp(v.P[a + 2], v.P[b + 2], e);
-        if (v.R[s]) { st.ax = s === 0 ? 0 : s === 1 ? 2 : 1; st.ang = v.R[s] * e * PI / 2; }
+        if (v.R[s]) { st.ax = v.AX[s]; st.ang = v.R[s] * e * PI / 2; }
         return;
       }
       u -= SEG + GAP;
@@ -1328,7 +1329,11 @@ function playIegFinale(opt) {
       // 금속(짙은 회색) → 잠기는 순간 하얗게 번쩍 → 빨강
       const lt = t - v.tEnd, m = lt < 0 ? 0 : clamp01(lt / 0.22), wf = lt >= 0 && lt < 0.1 ? 1 - lt / 0.1 : 0;
       const r0 = lerp(62, 255, m), g0 = lerp(62, 0, m), b0 = lerp(66, 0, m);
+      const blk = inBlock(v, t), fin = !blk && settled(v, t);
       for (let f = 0; f < 6; f++) {
+        // 멈춘 이웃과 맞붙은 면은 보이지 않으므로 건너뛴다
+        if (blk && v.nb[f] && inBlock(v.nb[f], t)) continue;
+        if (fin && v.nf[f] && settled(v.nf[f], t)) continue;
         const F = FACES[f];
         let nx0 = F[4], ny0 = F[5], nz0 = F[6];
         if (st.ax >= 0) { rot(st.ax, ca, sa, nx0, ny0, nz0); nx0 = tmp[0]; ny0 = tmp[1]; nz0 = tmp[2]; }
@@ -1369,13 +1374,6 @@ function playIegFinale(opt) {
   const drawFlyIeg = (t, fade) => {
     const u = eIO(seg(t, T.ball0, T.ball1)), out = seg(t, T.ball1, T.ball1 + 0.22);
     if (out >= 1) return;
-    for (let k = 10; k >= 1; k--) {
-      const uu = Math.max(0, u - k * 0.022), p = flyAt(uu);
-      ctx.globalAlpha = (1 - k / 11) * 0.45 * (1 - out) * fade;
-      ctx.fillStyle = k % 2 ? '#FFB300' : '#FF0000';
-      ctx.beginPath(); ctx.arc(p[0], p[1], (1.5 + 5 * uu) * (1 - k / 13), 0, 2 * PI); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
     const p = flyAt(u), vx = flyVx(u), sp = Math.hypot(vx, (1 - u) * (qy - oy0) + u * (cy - qy)) || 1;
     // 나는 쪽으로 살짝 기울었다가 가운데에 닿으며 바로 선다
     const tilt = lerp(opt.tilt || 0, Math.max(-1, Math.min(1, vx / sp)) * 0.18 * (1 - u), seg(t, 0, 0.2));
@@ -1444,7 +1442,7 @@ function playIegFinale(opt) {
   };
 
   // ── 매끈한 입체 로고(DOM): 같은 글자를 얇게 여러 겹 쌓아 두께를 만든다. 맨 앞 한 겹만 제 색(#FF0000, #333333) ──
-  const depth = c * 2;      // 틈이 메워진 정육면체 두 층의 앞면~뒷면 두께와 같다
+  const depth = c * 3;      // 틈이 메워진 정육면체 세 층의 앞면~뒷면 두께와 같다
   const mixc = (a, b, u) => 'rgb(' + Math.round(lerp(a[0], b[0], u)) + ',' + Math.round(lerp(a[1], b[1], u)) + ',' + Math.round(lerp(a[2], b[2], u)) + ')';
   const layer = (txt, F, left, top, color) => {
     const el = document.createElement('div');

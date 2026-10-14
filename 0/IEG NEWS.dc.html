@@ -457,6 +457,8 @@
   .ieg-zoom { animation: iegZoom .45s var(--ease) both; }
 
   /* ── 이스터에그: 숨은 IEG를 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
+  /* 홈 첫 진입 변신 장면 직전: 항목(패널)과 날짜 게이지를 숨겨 빈 무대에서 시작한다 */
+  html.ieg-pre .ieg-panel, html.ieg-pre .ieg-rail { opacity: 0; }
   .ieg-egg { position: fixed; inset: 0; z-index: 60; overflow: hidden; perspective-origin: 50% 50%; touch-action: none; }
   .ieg-egg-veil {
     position: absolute; inset: 0; opacity: 0; pointer-events: none;
@@ -1077,7 +1079,7 @@ function startDotWave(canvas) {
       const m = document.querySelector('.ieg-mark a'), r = m ? m.getBoundingClientRect() : null;
       const x = r ? r.left + r.width * 0.2 : w * 0.2, y = r ? r.top + r.height / 2 : 40;
       egg.busy = true; egg.alive = false;
-      playIegFinale({ x, y, dir: Math.atan2(h / 2 - y, w / 2 - x),
+      playIegFinale({ x, y, intro: true, dir: Math.atan2(h / 2 - y, w / 2 - x),
         ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
         done: () => { egg.busy = false; egg.wait = 3.5; } });
     },
@@ -1204,27 +1206,34 @@ function playIegFinale(opt) {
     ov.removeChild(el);
     return m;
   };
-  // 크기: 변신 무대의 IEG(FB)는 화면 폭의 60% 안, IEG NEWS 한 줄(FL)은 폭의 86% 안
+  // 크기: 'IEG NEWS' 한 줄 전체가 처음부터 변신 무대에 서므로(NEWS도 판금 조각으로 맞물린다) 한 줄이 화면 폭의 86% 안,
+  // 높이의 46% 안, 최대 320px. 무대의 글자 크기(FB)와 한 줄 크기(FL)가 같아 IEG가 비켜서는 단계는 없다.
   const m100 = measure('IEG NEWS', 100);
-  const FB = Math.round(Math.max(72, Math.min(320, W * 60 / (m100.ch[2].r - m100.ch[0].l), H * 0.46)));
-  const FL = Math.min(FB, Math.floor(W * 86 / (m100.ch[7].r - m100.ch[0].l)));
-  const s1 = FL / FB;
-  const mb = measure('IEG', FB), ml = measure('IEG NEWS', FL);
+  const FB = Math.round(Math.max(48, Math.min(320, H * 0.46, W * 86 / (m100.ch[7].r - m100.ch[0].l))));
+  const FL = FB, s1 = 1;
+  const TXT = 'IEG NEWS', CI = [0, 1, 2, 4, 5, 6, 7];   // 글자(li)마다 문자열 안 자리(가운데 빈칸은 건너뛴다)
+  const mb = measure(TXT, FB), ml = mb;
+  const fillTxt = (g, fill, stroke) => {
+    for (let k = 0; k < CI.length; k++) {
+      const i = CI[k];
+      if (fill) { g.fillStyle = typeof fill === 'function' ? fill(k) : fill; g.fillText(TXT[i], pad + mb.ch[i].l, pad + mb.base); }
+      if (stroke) g.strokeText(TXT[i], pad + mb.ch[i].l, pad + mb.base);
+    }
+  };
 
-  // 'IEG'를 보이지 않는 캔버스에 같은 자리로 그려, 글자 모양의 경계와 정육면체 칸을 얻는다
+  // 'IEG NEWS'를 보이지 않는 캔버스에 같은 자리로 그려, 글자 모양의 경계와 판금 조각 칸을 얻는다
   const pad = Math.ceil(FB * 0.25);
   const off = document.createElement('canvas');
-  off.width = Math.ceil(mb.ch[2].r) + pad * 2; off.height = FB + pad * 2;
+  off.width = Math.ceil(mb.ch[7].r) + pad * 2; off.height = FB + pad * 2;
   const o = off.getContext('2d');
   o.font = '800 ' + FB + 'px ' + FAMILY;
-  o.fillStyle = '#000';
-  for (let i = 0; i < 3; i++) o.fillText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+  fillTxt(o, '#000');
   const ow = off.width, oh = off.height, px = o.getImageData(0, 0, ow, oh).data;
   let gx0 = ow, gy0 = oh, gx1 = -1, gy1 = -1;
   for (let y = 0; y < oh; y++) for (let x = 0; x < ow; x++) {
     if (px[(y * ow + x) * 4 + 3] > 127) { if (x < gx0) gx0 = x; if (x > gx1) gx1 = x; if (y < gy0) gy0 = y; if (y > gy1) gy1 = y; }
   }
-  if (gx1 < 0) { gx0 = pad; gy0 = pad; gx1 = pad + Math.ceil(mb.ch[2].r); gy1 = pad + FB; }
+  if (gx1 < 0) { gx0 = pad; gy0 = pad; gx1 = pad + Math.ceil(mb.ch[7].r); gy1 = pad + FB; }
   const ax0 = gx0 - pad, ay0 = gy0 - pad, ax1 = gx1 + 1 - pad, ay1 = gy1 + 1 - pad;   // 글자 모양 경계(글자 상자 기준)
   // 큰 IEG 글자 상자의 자리: 글자 모양의 가운데가 화면 가운데에 온다
   const bigL = cx - (ax0 + ax1) / 2, bigT = cy - (ay0 + ay1) / 2;
@@ -1233,40 +1242,43 @@ function playIegFinale(opt) {
   //    다 맞물리면 곧 매끈한 로고와 똑같다. 판은 두께(PD)가 있어 얇은 겹을 몇 장 겹쳐 그린다. ──
   const PD = Math.max(8, Math.round(FB * 0.1));   // 판 두께
   const c = PD / 3;                                // (매끈한 로고 두께 depth = c * 3 = PD)
-  // 판에 입힐 글자 그림: 강철 앞면, 강철 옆면, 빨강 앞면, 빨강 옆면, 흰색(잠길 때 번쩍)
+  // 판에 입힐 글자 그림: 강철 앞면, 강철 옆면, 잠긴 앞면(IEG 빨강·NEWS #333333), 잠긴 옆면, 흰색(잠길 때 번쩍)
   const paint = (fill) => {
     const el = document.createElement('canvas'); el.width = ow; el.height = oh;
     const g = el.getContext('2d');
-    g.font = o.font; g.fillStyle = typeof fill === 'function' ? fill(g) : fill;
-    for (let i = 0; i < 3; i++) g.fillText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+    g.font = o.font;
+    if (fill === 'steel') {
+      const gr = g.createLinearGradient(0, pad + ay0, 0, pad + ay1);
+      gr.addColorStop(0, '#A4A4AA'); gr.addColorStop(0.5, '#707076'); gr.addColorStop(1, '#4C4C52');
+      fill = gr;
+    }
+    fillTxt(g, fill);
     return el;
   };
   const IMG = {
-    steel: paint((g) => {
-      const gr = g.createLinearGradient(0, pad + ay0, 0, pad + ay1);
-      gr.addColorStop(0, '#A4A4AA'); gr.addColorStop(0.5, '#707076'); gr.addColorStop(1, '#4C4C52');
-      return gr;
-    }),
-    steelSide: paint('#2E2E33'), red: paint('#FF0000'), redSide: paint('#9A0000'), white: paint('#FFFFFF')
+    steel: paint('steel'), steelSide: paint('#2E2E33'),
+    red: paint((k) => (k < 3 ? '#FF0000' : '#333333')), redSide: paint((k) => (k < 3 ? '#9A0000' : '#161618')),
+    white: paint('#FFFFFF')
   };
   // 모서리 빛(베벨): 글자 테두리를 따라 안쪽으로 가는 흰 띠. 깎아 낸 금속판처럼 모서리가 반짝인다.
   IMG.edge = (() => {
     const el = document.createElement('canvas'); el.width = ow; el.height = oh;
     const g = el.getContext('2d');
     g.font = o.font; g.lineJoin = 'round'; g.strokeStyle = '#FFFFFF'; g.lineWidth = Math.max(2, FB * 0.016);
-    for (let i = 0; i < 3; i++) g.strokeText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
-    g.globalCompositeOperation = 'destination-in'; g.fillStyle = '#000';
-    for (let i = 0; i < 3; i++) g.fillText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+    fillTxt(g, null, true);
+    g.globalCompositeOperation = 'destination-in';
+    fillTxt(g, '#000');
     return el;
   })();
   const inkAt = (x, y) => {   // 글자 상자 좌표
     const sx = Math.floor(pad + x), sy = Math.floor(pad + y);
     return sx >= 0 && sy >= 0 && sx < ow && sy < oh && px[(sy * ow + sx) * 4 + 3] > 127;
   };
-  const pieces = [], lockAt = [0, 0, 0], cenX = [0, 0, 0], cnt = [0, 0, 0];
-  for (let li = 0; li < 3; li++) {
+  const NLET = CI.length;
+  const pieces = [], lockAt = CI.map(() => 0), cenX = CI.map(() => 0), cnt = CI.map(() => 0);
+  for (let li = 0; li < NLET; li++) {
     // 이 글자의 실제 잉크 경계
-    const lx0 = Math.max(ax0, mb.ch[li].l), lx1 = Math.min(ax1, li < 2 ? mb.ch[li + 1].l : ax1);
+    const ci = CI[li], lx0 = Math.max(ax0, mb.ch[ci].l), lx1 = Math.min(ax1, ci < 7 ? mb.ch[ci + 1].l : ax1);
     let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;
     for (let y = ay0; y < ay1; y += 2) for (let x = lx0; x < lx1; x += 2) {
       if (inkAt(x, y)) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
@@ -1293,9 +1305,9 @@ function playIegFinale(opt) {
                   sax: (Math.random() * 3) | 0, spin: (Math.random() < 0.5 ? -1 : 1) * (Math.random() < 0.5 ? 1 : 2) * PI / 2 };
       mine.push(p);
     }
-    // 가운데 조각부터 차례로 펴진다(글자마다 0.3초씩 늦게)
+    // 가운데 조각부터 차례로 펴진다(I·E·G·N·E·W·S 글자마다 0.12초씩 늦게)
     mine.sort((a, b) => a.d - b.d).forEach((p, k) => {
-      p.s = T.unfold + li * 0.3 + Math.min(0.3, k * 0.04);
+      p.s = T.unfold + li * 0.12 + Math.min(0.26, k * 0.035);
       p.tEnd = p.s + 0.66;
       lockAt[li] = Math.max(lockAt[li], p.tEnd);
       cnt[li]++;
@@ -1495,8 +1507,8 @@ function playIegFinale(opt) {
   stage.appendChild(grpI);
 
   // IEG NEWS 한 줄: 글자 모양의 가운데가 화면 가운데에 온다. NEWS는 글자마다 따로 세워 한 장씩 펼친다.
-  const lineL = cx - (ml.ch[0].l + (ax0 - mb.ch[0].l) * s1 + ml.ch[7].r) / 2;
-  const lineT = cy - (ay0 + ay1) / 2 * s1;
+  // (판금 무대가 처음부터 한 줄 전체이므로 한 줄 자리는 판금 글자 자리와 같다)
+  const lineL = bigL, lineT = bigT;
   const news = [];
   for (let k = 0; k < 4; k++) {
     const cc = ml.ch[4 + k], g = document.createElement('div');
@@ -1513,7 +1525,8 @@ function playIegFinale(opt) {
     sh.classList.add('ieg-egg-shine');
     g.appendChild(sh);
     stage.appendChild(g);
-    news.push({ g, lays, sh, left: lineL + cc.l, t0: T.news + k * 0.09 });
+    // NEWS도 판금 조각으로 맞물렸으므로 매끈한 로고가 나타날 때 이미 서 있다(따로 일어서지 않는다)
+    news.push({ g, lays, sh, left: lineL + cc.l, t0: T.weld0 - 1 });
   }
   // 큰 IEG → 한 줄의 IEG 자리: 점 P가 s1·P + (slideX, slideY)로 간다(I의 펜 자리끼리, 글자 상자 위쪽끼리)
   const slideX = lineL + ml.ch[0].l - s1 * (bigL + mb.ch[0].l), slideY = lineT - s1 * bigT;
@@ -1607,13 +1620,15 @@ function playIegFinale(opt) {
   let abortAt = -1, pAbort = 0;
   const panelP = (t) => {
     if (abortAt >= 0) return pAbort * (1 - eOut(seg(t, abortAt, abortAt + 0.6)));
+    // 첫 진입(intro): 패널은 처음부터 물러나 있어(보이지 않음) 빈 무대에서 시작하고, 끝에 들어온다
+    if (opt.intro && t < T.fly) return 1;
     if (t < T.fly0) return 0;
     if (t < T.fly1) return eBackIn(seg(t, T.fly0, T.fly1));   // 살짝 움츠렸다가 확 물러난다
     if (t < T.fly) return 1;
     return 1 - eBackOut(seg(t, T.fly, T.fly + 0.9));          // 돌아오며 살짝 지나쳤다 제자리
   };
   const applyParts = (t) => {
-    const p = panelP(t), j = abortAt >= 0 ? 0 : t < T.fly0 ? seg(t, 0.05, T.fly0) : 1 - seg(t, T.fly0, T.fly0 + 0.2);
+    const p = panelP(t), j = abortAt >= 0 || opt.intro ? 0 : t < T.fly0 ? seg(t, 0.05, T.fly0) : 1 - seg(t, T.fly0, T.fly0 + 0.2);
     const op = String(1 - clamp01((p - 0.45) / 0.5)), dz = (-p * 260).toFixed(1);
     parts.forEach((pt) => {
       const jx = Math.sin(t * 83 + pt.seed) * 3 * j, jy = Math.cos(t * 71 + pt.seed) * 2 * j, jr = Math.sin(t * 59 + pt.seed) * 0.35 * j;
@@ -1648,7 +1663,7 @@ function playIegFinale(opt) {
       }
       clanks.push({ t, a: 1.2 });
     }
-    for (let li = 0; li < 3; li++) if (cnt[li] && t >= lockAt[li] && once('l' + li)) { clanks.push({ t, a: 3.5 }); letterSparks(li, t); }
+    for (let li = 0; li < NLET; li++) if (cnt[li] && t >= lockAt[li] && once('l' + li)) { clanks.push({ t, a: 3.5 }); letterSparks(li, t); }
     if (t >= T.lock && once('lock')) {
       clanks.push({ t, a: 11 });
       rings.push({ t, x: cx, y: cy, r0: 30, r1: Math.max(W, H) * 0.62, dur: 0.75, col: '#FF0000', w: 7 });
@@ -1710,6 +1725,9 @@ function playIegFinale(opt) {
   ov.addEventListener('pointerdown', skip);
   window.addEventListener('keydown', onKey, true);
   window.addEventListener('resize', onResize);
+  // 첫 진입이면 첫 프레임을 기다리지 않고 패널을 바로 숨긴 상태로 둔다(미리 숨겨 둔 클래스는 이제 뗀다)
+  if (opt.intro) applyParts(0);
+  html.classList.remove('ieg-pre');
   raf = requestAnimationFrame(frame);
 }
 
@@ -1732,8 +1750,14 @@ class Component extends DCLogic {
     const fx = document.querySelector('.ieg-fx');
     this._fx = fx ? startDotWave(fx) : null;
     // 홈페이지로 처음 들어오면(새로 불러올 때 한 번) 변신 장면을 보여 준다. 글꼴·패널이 자리 잡은 뒤 시작한다.
-    if (this._fx && this.state.view === 'home') {
-      const go = () => { this._introT = setTimeout(() => { if (this.state.view === 'home' && this._fx) this._fx.intro(); }, 350); };
+    // 장면 전에는 항목(패널)이 보이지 않게 미리 숨겨 둔다(html.ieg-pre). 장면이 시작되면 떼고, 못 시작하면 바로 뗀다.
+    if (this._fx && this.state.view === 'home' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('ieg-pre');
+      this._preT = setTimeout(() => document.documentElement.classList.remove('ieg-pre'), 4000);
+      const go = () => { this._introT = setTimeout(() => {
+        if (this.state.view === 'home' && this._fx) this._fx.intro();
+        document.documentElement.classList.remove('ieg-pre');
+      }, 350); };
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(go); else go();
     }
     // PC 홈은 한 화면에 딱 맞으므로 스크롤 막대 자리를 두지 않는다(CSS html.ieg-onepage)
@@ -1832,7 +1856,8 @@ class Component extends DCLogic {
     if (this._sraf) cancelAnimationFrame(this._sraf);
     if (this._ro) this._ro.disconnect();
     if (this._fx) this._fx.stop();
-    clearTimeout(this._introT);
+    clearTimeout(this._introT); clearTimeout(this._preT);
+    document.documentElement.classList.remove('ieg-pre');
     document.documentElement.classList.remove('ieg-onepage');
     clearTimeout(this._railT);
   }

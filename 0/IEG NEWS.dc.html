@@ -1198,8 +1198,8 @@ function playIegFinale(opt) {
   // 큰 IEG 글자 상자의 자리: 글자 모양의 가운데가 화면 가운데에 온다
   const bigL = cx - (ax0 + ax1) / 2, bigT = cy - (ay0 + ay1) / 2;
 
-  // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤로 세 개(3층). 작고 많아서(1천 개 남짓) 촘촘하다.
-  const c = Math.max(4, Math.round(FB * 0.04));
+  // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤로 세 개(3층). 작고 많아서(2천 개 남짓) 촘촘하다.
+  const c = Math.max(4, Math.round(FB * 0.03));
   const nx = Math.ceil((ax1 - ax0) / c), ny = Math.ceil((ay1 - ay0) / c);
   const gx = (ax0 + ax1) / 2 - nx * c / 2, gy = (ay0 + ay1) / 2 - ny * c / 2;
   const vox = [];

@@ -829,7 +829,7 @@ function startDotWave(canvas) {
   if (!ctx) return null;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let w = 0, h = 0, gap = 26, cols = 0, rows = 0, raf = 0, last = 0;
-  const mouse = { x: 0, y: 0, on: false };
+  const mouse = { x: 0, y: 0, on: false, bg: false };   // bg: 커서가 패널·메뉴가 아닌 빈 배경 위에 있음
   const ripples = [];   // { x, y, start, speed, life, amp, band }
   const R = 150;        // 커서가 점을 미는 반경
 
@@ -841,7 +841,7 @@ function startDotWave(canvas) {
   // wait: 다음에 나타날 때까지 남은 초, rest: 빈 곳에서 머무는 남은 초, (px, py): 흔들림까지 더한 실제 그리는 자리,
   // tilt: 기울기(라디안)
   const egg = { alive: false, x: 0, y: 0, px: -99, py: -99, vx: 0, vy: 0, tx: 0, ty: 0, free: false, tilt: 0,
-                wait: 3.5, rest: 0, busy: false, fade: 0, seed: Math.random() * 9 };
+                wait: 3.5, rest: 0, busy: false, fade: 0, hov: 0, over: false, seed: Math.random() * 9 };
   const iegScale = () => (w < 700 ? 0.9 : 1);
   const sparks = [];    // 잡을 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
   const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
@@ -883,7 +883,8 @@ function startDotWave(canvas) {
   const catchEgg = () => {
     const x = egg.px, y = egg.py, tilt = egg.tilt;
     const dir = Math.hypot(egg.vx, egg.vy) > 10 ? Math.atan2(egg.vy, egg.vx) : null;
-    egg.alive = false; egg.px = egg.py = -99; egg.wait = 9;
+    egg.alive = false; egg.px = egg.py = -99; egg.wait = 9; egg.hov = 0;
+    if (egg.over) { egg.over = false; document.documentElement.style.cursor = ''; }
     burst(x, y);
     pushRipple(shockwave(x, y, 0.6));
     if (typeof playIegFinale !== 'function') return;
@@ -910,7 +911,11 @@ function startDotWave(canvas) {
       // 빈 곳에 닿으면 반쯤은 잠깐 머물러(찾아 누를 틈) 주고, 아니면 바로 다음 곳으로 간다
       if (egg.free && Math.random() < 0.5) egg.rest = 0.7 + Math.random() * 0.9; else pickTarget();
     }
-    const sp = egg.rest > 0 ? 0 : 120 * Math.min(1, 0.35 + d / 120);
+    // 커서가 (패널이 아닌 빈 곳에서) 가까이 오면 반응한다: hov 0~1. 반응하는 동안은 느려져 잡기 쉽다.
+    const near = mouse.on && mouse.bg && Math.hypot(mouse.x - egg.px, mouse.y - egg.py) < 44;
+    egg.hov += ((near ? 1 : 0) - egg.hov) * Math.min(1, dt * 10);
+    if (near !== egg.over) { egg.over = near; document.documentElement.style.cursor = near ? 'pointer' : ''; }
+    const sp = egg.rest > 0 ? 0 : 120 * Math.min(1, 0.35 + d / 120) * (1 - 0.75 * egg.hov);
     const k = Math.min(1, dt * 2.4);
     egg.vx += ((d ? dx / d : 0) * sp - egg.vx) * k;
     egg.vy += ((d ? dy / d : 0) * sp - egg.vy) * k;
@@ -928,8 +933,17 @@ function startDotWave(canvas) {
       ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); ctx.stroke();
     }
     if (egg.alive) {
-      // 꼬리·빛 없이 IEG 글자만
-      drawIeg(ctx, egg.px, egg.py, iegScale(), egg.tilt, egg.fade);
+      // 꼬리·빛 없이 IEG 글자만. 커서가 가까이 오면 커지며 파르르 떨고, 노란 테가 둘레로 번져 나간다.
+      const hv = egg.hov;
+      if (hv > 0.02) {
+        for (let k = 0; k < 2; k++) {
+          const f = (s * 1.4 + k * 0.5) % 1;
+          ctx.globalAlpha = hv * (1 - f) * 0.9;
+          ctx.strokeStyle = '#FFB300'; ctx.lineWidth = 2.2 * (1 - f) + 0.6;
+          ctx.beginPath(); ctx.arc(egg.px, egg.py, (20 + f * 26) * iegScale(), 0, 6.2832); ctx.stroke();
+        }
+      }
+      drawIeg(ctx, egg.px, egg.py, iegScale() * (1 + 0.3 * hv), egg.tilt + Math.sin(s * 38) * 0.07 * hv, egg.fade);
     }
     ctx.globalAlpha = 1;
   };
@@ -1020,6 +1034,7 @@ function startDotWave(canvas) {
   const onMove = (e) => {
     if (reduce || (e.pointerType && e.pointerType !== 'mouse')) return;
     mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true;
+    mouse.bg = !(e.target.closest && e.target.closest('a, button, .ieg-panel, .ieg-nav, .ieg-rail, .ieg-modal, .ieg-egg'));
   };
   const onLeave = () => { mouse.on = false; };
   // 패널·메뉴·버튼·링크가 아닌 빈 곳을 누르면 물결이 퍼진다
@@ -1117,7 +1132,7 @@ function playIegFinale(opt) {
     block0: 0.7,                    // 블록이 생겨 돌아 들어옴
     unfold: 1.35,                   // 펼침 시작. 글자마다 0.3초씩 늦게
     cam1: 2.85, lock: 3.15,         // 카메라가 정면으로 → 쾅, 블록 사이 틈이 메워져 한 덩어리가 됨
-    weld0: 3.35, weld1: 4.0,        // 용접 빛줄기가 왼쪽에서 오른쪽으로 훑고, 지나간 자리는 매끈한 글자로 바뀜
+    weld0: 3.3, weld1: 3.3,         // 판금 조각이 다 맞물린 자리에 매끈한 입체 로고가 나타남(판 앞면이 글자 모양 그대로라 이음 없이 바뀐다)
     swing0: 4.1, swing1: 6.7,       // 한 번 돌아 두께를 보여 줌
     slide0: 4.4, slide1: 4.8,       // IEG가 비켜섬
     news: 4.7,                      // NEWS가 한 글자씩 펼쳐짐
@@ -1199,71 +1214,76 @@ function playIegFinale(opt) {
   // 큰 IEG 글자 상자의 자리: 글자 모양의 가운데가 화면 가운데에 온다
   const bigL = cx - (ax0 + ax1) / 2, bigT = cy - (ay0 + ay1) / 2;
 
-  // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤로 세 개(3층). 작고 많아서(2천 개 남짓) 촘촘하다.
-  const c = Math.max(4, Math.round(FB * 0.034));
-  const nx = Math.ceil((ax1 - ax0) / c), ny = Math.ceil((ay1 - ay0) / c);
-  const gx = (ax0 + ax1) / 2 - nx * c / 2, gy = (ay0 + ay1) / 2 - ny * c / 2;
-  const vox = [];
-  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-    let hit = 0;
-    for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) {
-      const sx = Math.floor(pad + gx + (i + (a + 0.5) / 3) * c), sy = Math.floor(pad + gy + (j + (b + 0.5) / 3) * c);
-      if (sx >= 0 && sy >= 0 && sx < ow && sy < oh && px[(sy * ow + sx) * 4 + 3] > 127) hit++;
+  // ── 판금 조각: 'IEG'를 글자마다 금속 판 몇 장(가로·세로 칸)으로 자른다. 판 앞면은 실제 글자 모양 그대로라
+  //    다 맞물리면 곧 매끈한 로고와 똑같다. 판은 두께(PD)가 있어 얇은 겹을 몇 장 겹쳐 그린다. ──
+  const PD = Math.max(8, Math.round(FB * 0.1));   // 판 두께
+  const c = PD / 3;                                // (매끈한 로고 두께 depth = c * 3 = PD)
+  // 판에 입힐 글자 그림: 강철 앞면, 강철 옆면, 빨강 앞면, 빨강 옆면, 흰색(잠길 때 번쩍)
+  const paint = (fill) => {
+    const el = document.createElement('canvas'); el.width = ow; el.height = oh;
+    const g = el.getContext('2d');
+    g.font = o.font; g.fillStyle = typeof fill === 'function' ? fill(g) : fill;
+    for (let i = 0; i < 3; i++) g.fillText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+    return el;
+  };
+  const IMG = {
+    steel: paint((g) => {
+      const gr = g.createLinearGradient(0, pad + ay0, 0, pad + ay1);
+      gr.addColorStop(0, '#A4A4AA'); gr.addColorStop(0.5, '#707076'); gr.addColorStop(1, '#4C4C52');
+      return gr;
+    }),
+    steelSide: paint('#2E2E33'), red: paint('#FF0000'), redSide: paint('#9A0000'), white: paint('#FFFFFF')
+  };
+  const inkAt = (x, y) => {   // 글자 상자 좌표
+    const sx = Math.floor(pad + x), sy = Math.floor(pad + y);
+    return sx >= 0 && sy >= 0 && sx < ow && sy < oh && px[(sy * ow + sx) * 4 + 3] > 127;
+  };
+  const pieces = [], lockAt = [0, 0, 0], cenX = [0, 0, 0], cnt = [0, 0, 0];
+  for (let li = 0; li < 3; li++) {
+    // 이 글자의 실제 잉크 경계
+    const lx0 = Math.max(ax0, mb.ch[li].l), lx1 = Math.min(ax1, li < 2 ? mb.ch[li + 1].l : ax1);
+    let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9;
+    for (let y = ay0; y < ay1; y += 2) for (let x = lx0; x < lx1; x += 2) {
+      if (inkAt(x, y)) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
     }
-    if (hit < 5) continue;
-    const ex = gx + (i + 0.5) * c;
-    const li = ex < mb.ch[1].l ? 0 : ex < mb.ch[2].l ? 1 : 2;
-    const X = bigL + ex - cx, Y = bigT + gy + (j + 0.5) * c - cy;
-    for (let k = -1; k <= 1; k++) vox.push({ X, Y, Z: k * c, li, fi: [i, j, k] });
-  }
-  // 처음 블록: 정육면체를 모양 순서를 지키며(왼쪽 것은 블록 왼쪽, 위 것은 위) B×B×B 상자에 채운다
-  const N = vox.length, B = Math.max(1, Math.ceil(Math.cbrt(N))), slabs = Math.ceil(N / (B * B));
-  const sorted = vox.slice().sort((p, q) => p.X - q.X || p.Y - q.Y || p.Z - q.Z);
-  for (let sx = 0, k = 0; sx < slabs; sx++) {
-    const slab = sorted.slice(k, k + B * B).sort((p, q) => p.Y - q.Y || p.Z - q.Z || p.X - q.X);
-    k += slab.length;
-    for (let r = 0; r * B < slab.length; r++) {
-      slab.slice(r * B, r * B + B).sort((p, q) => p.Z - q.Z || p.X - q.X).forEach((v, sz) => {
-        v.P = [(sx - (slabs - 1) / 2) * c, (r - (B - 1) / 2) * c, (sz - (B - 1) / 2) * c];
-        v.bi = [sx, r, sz];
-      });
+    if (bx1 < bx0) continue;
+    bx0 -= 2; by0 -= 2; bx1 += 3; by1 += 3;
+    const lw = bx1 - bx0, lh = by1 - by0;
+    const cols = Math.max(1, Math.round(lw / (FB * 0.2))), rows = Math.max(3, Math.round(lh / (FB * 0.19)));
+    const lcx = bigL + (bx0 + bx1) / 2 - cx, lcy = bigT + (by0 + by1) / 2 - cy;
+    cenX[li] = lcx;
+    const mine = [];
+    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      const x = bx0 + lw * q / cols, y = by0 + lh * r / rows, w = lw / cols, h = lh / rows;
+      let ink = 0, all = 0;
+      for (let yy = y + 1; yy < y + h; yy += 3) for (let xx = x + 1; xx < x + w; xx += 3) { all++; if (inkAt(xx, yy)) ink++; }
+      if (!all || ink / all < 0.04) continue;
+      const X0 = bigL + x - cx, Y0 = bigT + y - cy;          // 왼쪽 위(화면 가운데 기준)
+      const pcx = X0 + w / 2, pcy = Y0 + h / 2, dx = pcx - lcx, dy = pcy - lcy;
+      // 경첩: 글자 가운데를 향한 모서리. 판은 그 모서리를 축으로 뒤로 160도 접혀 있다가 펴진다.
+      let hx, hy, hax, sign;
+      if (Math.abs(dx) > Math.abs(dy) * 0.8) { hax = 1; hx = dx > 0 ? X0 : X0 + w; hy = pcy; sign = dx > 0 ? -1 : 1; }
+      else { hax = 0; hx = pcx; hy = dy > 0 ? Y0 : Y0 + h; sign = dy > 0 ? 1 : -1; }
+      const p = { li, x, y, w, h, X0, Y0, pcx, pcy, hx, hy, hax, fold: sign * 160 * PI / 180, d: Math.hypot(dx, dy),
+                  sax: (Math.random() * 3) | 0, spin: (Math.random() < 0.5 ? -1 : 1) * (Math.random() < 0.5 ? 1 : 2) * PI / 2 };
+      mine.push(p);
     }
-  }
-  // 길: 글자마다 축 순서를 달리해(I: 위아래→옆→앞뒤, E: 앞뒤→옆→위아래, G: 옆→위아래→앞뒤) 한 축씩 미끄러지며
-  // 그 축에 맞춰 90도 구른다. 글자(I, E, G)마다 0.3초씩 늦게, 같은 글자 안에서는 가운데 것부터 펼쳐진다.
-  // 마지막 칸에 닿는 시각(tEnd)에 빨갛게 잠긴다.
-  const ORDER = [[1, 0, 2], [2, 0, 1], [0, 1, 2]], ROLL = [2, 0, 1];
-  const lockAt = [0, 0, 0], cenX = [0, 0, 0], cnt = [0, 0, 0];
-  vox.forEach((v) => { cenX[v.li] += v.X; cnt[v.li]++; });
-  for (let li = 0; li < 3; li++) cenX[li] = cnt[li] ? cenX[li] / cnt[li] : 0;
-  vox.forEach((v) => {
-    const fin = [v.X, v.Y, v.Z], pts = [v.P.slice()];
-    v.R = []; v.AX = [];
-    ORDER[v.li].forEach((ax) => {
-      const a = pts[pts.length - 1], b = a.slice();
-      b[ax] = fin[ax]; v.R.push(Math.sign(b[ax] - a[ax])); v.AX.push(ROLL[ax]); pts.push(b);
+    // 가운데 조각부터 차례로 펴진다(글자마다 0.3초씩 늦게)
+    mine.sort((a, b) => a.d - b.d).forEach((p, k) => {
+      p.s = T.unfold + li * 0.3 + Math.min(0.3, k * 0.04);
+      p.tEnd = p.s + 0.66;
+      lockAt[li] = Math.max(lockAt[li], p.tEnd);
+      cnt[li]++;
+      pieces.push(p);
     });
-    v.P = [].concat(...pts);
-    v.bd = Math.min(1, Math.hypot(pts[0][0], pts[0][1], pts[0][2]) / (B * c * 0.87)) * 0.38;
-    v.t0 = T.unfold + v.li * 0.3 + Math.min(1, Math.hypot(v.X - cenX[v.li], v.Y) / (FB * 0.6)) * 0.16 + Math.random() * 0.05;
-    v.tEnd = v.t0 + 3 * SEG + 2 * GAP;
-    lockAt[v.li] = Math.max(lockAt[v.li], v.tEnd);
+  }
+  // 처음엔 화면 가운데에 접힌 채 겹겹이 쌓인 덩어리다(조각마다 조금씩 어긋나고 앞뒤로 포개진다)
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  pieces.forEach((p, i) => {
+    p.ox = rnd(-0.12, 0.12) * FB - p.pcx; p.oy = rnd(-0.12, 0.12) * FB - p.pcy; p.oz = (i - pieces.length / 2) * PD * 0.45;
+    p.born = T.block0 + i * 0.012;
   });
-  // 가려진 면 빼기(정육면체가 많아도 가볍게): 블록 안에서, 그리고 글자로 다 맞물린 뒤에는 이웃 정육면체와 맞붙은 면이
-  // 보이지 않는다. 면마다 그 방향의 이웃(블록 상태 nb, 글자 상태 nf)을 기억해 두고, 둘 다 멈춰 있을 때만 그 면을 건너뛴다.
-  // 면 순서는 FACES와 같다: 앞(-z) 뒤(+z) 위(-y) 아래(+y) 왼(-x) 오른(+x)
-  const NB = [[0, 0, -1], [0, 0, 1], [0, -1, 0], [0, 1, 0], [-1, 0, 0], [1, 0, 0]];
-  const keyOf = (a) => a[0] + ',' + a[1] + ',' + a[2];
-  const atB = new Map(), atF = new Map();
-  vox.forEach((v) => { atB.set(keyOf(v.bi), v); atF.set(keyOf(v.fi), v); });
-  vox.forEach((v) => {
-    v.nb = NB.map((d) => atB.get(keyOf([v.bi[0] + d[0], v.bi[1] + d[1], v.bi[2] + d[2]])) || null);
-    v.nf = NB.map((d) => atF.get(keyOf([v.fi[0] + d[0], v.fi[1] + d[1], v.fi[2] + d[2]])) || null);
-  });
-  // 블록 안에서 멈춰 있음(다 생겨났고 아직 떠나지 않음) / 글자 자리에 멈춰 있음
-  const inBlock = (v, t) => t >= T.block0 + v.bd + 0.32 && t <= v.t0;
-  const settled = (v, t) => t >= v.tEnd;
-  // 카메라: 비스듬히 위에서 본 블록이 돌아 들어오고, 펼쳐지는 동안 반대편으로 돌다가 정면에 철컥 선다
+  // 카메라: 비스듬히 위에서 본 덩어리가 돌아 들어오고, 펼쳐지는 동안 반대편으로 돌다가 정면에 철컥 선다
   const camAt = (t) => {
     let yaw, pitch;
     if (t < T.unfold) { const e = eOut(seg(t, T.block0, T.unfold)); yaw = 38 + 230 * (1 - e); pitch = 24; }
@@ -1275,106 +1295,70 @@ function playIegFinale(opt) {
     const cy0 = Math.cos(yaw), sy0 = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
     const x1 = X * cy0 - Z * sy0, z1 = X * sy0 + Z * cy0, y2 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp;
     const k = D / (D + z2);
-    return [cx + x1 * k, cy + y2 * k];
+    return [cx + x1 * k, cy + y2 * k, z2];
   };
-
-  // ── 정육면체 그리기: 면마다 빛(왼쪽 위 앞)을 받아 밝기를 정하고, 먼 면부터 칠한다. 정면 밝기 = 1(제 색 그대로) ──
-  const CORN = [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1];
-  const FACES = [[0, 1, 2, 3, 0, 0, -1], [5, 4, 7, 6, 0, 0, 1], [4, 5, 1, 0, 0, -1, 0], [3, 2, 6, 7, 0, 1, 0], [4, 0, 3, 7, -1, 0, 0], [1, 5, 6, 2, 1, 0, 0]];
-  const LX = -0.39, LY = -0.68, LZ = -0.62, AMB = 0.45, DIF = 0.89;
-  const tmp = [0, 0, 0], PX = new Float64Array(8), PY = new Float64Array(8), PZ = new Float64Array(8);
-  const st = { x: 0, y: 0, z: 0, ax: -1, ang: 0, sc: 1 };
-  const faces = [];
+  const tmp = [0, 0, 0];
   const rot = (ax, ca, sa, x, y, z) => {
     if (ax === 0) { tmp[0] = x; tmp[1] = y * ca - z * sa; tmp[2] = y * sa + z * ca; }
     else if (ax === 1) { tmp[0] = x * ca + z * sa; tmp[1] = y; tmp[2] = -x * sa + z * ca; }
     else { tmp[0] = x * ca - y * sa; tmp[1] = x * sa + y * ca; tmp[2] = z; }
   };
-  const vState = (v, t) => {
-    st.ax = -1; st.ang = 0;
-    st.sc = eBackOut(seg(t, T.block0 + v.bd, T.block0 + v.bd + 0.32));
-    let u = t - v.t0;
-    if (u <= 0) { st.x = v.P[0]; st.y = v.P[1]; st.z = v.P[2]; return; }
-    for (let s = 0; s < 3; s++) {
-      const a = s * 3, b = a + 3;
-      if (u < SEG) {
-        const e = eIO(u / SEG);
-        st.x = lerp(v.P[a], v.P[b], e); st.y = lerp(v.P[a + 1], v.P[b + 1], e); st.z = lerp(v.P[a + 2], v.P[b + 2], e);
-        if (v.R[s]) { st.ax = v.AX[s]; st.ang = v.R[s] * e * PI / 2; }
-        return;
-      }
-      u -= SEG + GAP;
-      if (u < 0) { st.x = v.P[b]; st.y = v.P[b + 1]; st.z = v.P[b + 2]; return; }
-    }
-    st.x = v.P[9]; st.y = v.P[10]; st.z = v.P[11];
+  // 조각의 지금 자세: 1) 접힌 채 덩어리 자리에서 미끄러져 나오며 돌던 것을 푼다 2) 경첩으로 펴지며 살짝 지나쳤다 철컥
+  const pose = (p, t) => {
+    const u1 = eIO(seg(t, p.s, p.s + 0.34)), u2 = eBackOut(seg(t, p.s + 0.36, p.s + 0.66));
+    const lt = t - p.tEnd;
+    return {
+      sc: eBackOut(seg(t, p.born, p.born + 0.3)),
+      spin: p.spin * (1 - u1), fold: p.fold * (1 - u2),
+      ox: p.ox * (1 - u1), oy: p.oy * (1 - u1), oz: p.oz * (1 - u1) - (lt > 0 && lt < 0.12 ? Math.sin(lt / 0.12 * PI) * PD * 0.5 : 0)
+    };
   };
-  // 면 색 문자열 묶음(채널마다 4단계): 매 프레임 수천 개 문자열을 새로 만들지 않는다
-  const COLS = new Map();
-  const colOf = (r, g, b) => {
-    const R = Math.min(255, r & ~3), G = Math.min(255, g & ~3), Bc = Math.min(255, b & ~3), k = (R << 16) | (G << 8) | Bc;
-    let s = COLS.get(k);
-    if (!s) { s = 'rgb(' + R + ',' + G + ',' + Bc + ')'; COLS.set(k, s); }
-    return s;
+  // 판 위의 한 점(최종 자리 X, Y, 겹 깊이 Z)을 지금 자세로 옮긴다
+  const place = (p, q, X, Y, Z) => {
+    let x = (X - p.pcx) * q.sc, y = (Y - p.pcy) * q.sc, z = Z * q.sc;
+    if (q.spin) { rot(p.sax, Math.cos(q.spin), Math.sin(q.spin), x, y, z); x = tmp[0]; y = tmp[1]; z = tmp[2]; }
+    x += p.pcx - p.hx; y += p.pcy - p.hy;
+    if (q.fold) { rot(p.hax, Math.cos(q.fold), Math.sin(q.fold), x, y, z); x = tmp[0]; y = tmp[1]; z = tmp[2]; }
+    return [x + p.hx + q.ox, y + p.hy + q.oy, z + q.oz];
   };
-  // clipX: 용접 빛줄기의 화면 x. 그 오른쪽(아직 지나가지 않은 쪽)만 그린다(null이면 전부).
-  const drawVoxels = (t, yaw, pitch, alpha, clipX) => {
+  const NL = Math.max(6, Math.round(PD / 1.4));   // 두께를 이루는 겹 수(옆에서 봐도 줄무늬 없이 이어지게)
+  const LX = -0.39, LY = -0.68, LZ = -0.62;
+  const drawPlates = (t, yaw, pitch, alpha) => {
     if (alpha <= 0.01) return;
-    const cy0 = Math.cos(yaw), sy0 = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-    // 쾅 하는 순간 블록 사이 틈이 메워지고 이음선이 옅어져 한 덩어리 글자가 된다
-    const seal = eOut(seg(t, T.lock - 0.05, T.lock + 0.2));
-    faces.length = 0;
-    for (let n = 0; n < vox.length; n++) {
-      const v = vox[n];
-      vState(v, t);
-      if (st.sc <= 0.02) continue;
-      const hs = c * (0.46 + 0.04 * seal) * st.sc, ca = Math.cos(st.ang), sa = Math.sin(st.ang);
-      for (let q = 0; q < 8; q++) {
-        let ox = CORN[q * 3] * hs, oy = CORN[q * 3 + 1] * hs, oz = CORN[q * 3 + 2] * hs;
-        if (st.ax >= 0) { rot(st.ax, ca, sa, ox, oy, oz); ox = tmp[0]; oy = tmp[1]; oz = tmp[2]; }
-        const X = st.x + ox, Y = st.y + oy, Z = st.z + oz;
-        const x1 = X * cy0 - Z * sy0, z1 = X * sy0 + Z * cy0;
-        PX[q] = x1; PY[q] = Y * cp - z1 * sp; PZ[q] = Y * sp + z1 * cp;
-      }
-      // 금속(짙은 회색) → 잠기는 순간 하얗게 번쩍 → 빨강
-      const lt = t - v.tEnd, m = lt < 0 ? 0 : clamp01(lt / 0.22), wf = lt >= 0 && lt < 0.1 ? 1 - lt / 0.1 : 0;
-      const r0 = lerp(62, 255, m), g0 = lerp(62, 0, m), b0 = lerp(66, 0, m);
-      const blk = inBlock(v, t), fin = !blk && settled(v, t);
-      for (let f = 0; f < 6; f++) {
-        // 멈춘 이웃과 맞붙은 면은 보이지 않으므로 건너뛴다
-        if (blk && v.nb[f] && inBlock(v.nb[f], t)) continue;
-        if (fin && v.nf[f] && settled(v.nf[f], t)) continue;
-        const F = FACES[f];
-        let nx0 = F[4], ny0 = F[5], nz0 = F[6];
-        if (st.ax >= 0) { rot(st.ax, ca, sa, nx0, ny0, nz0); nx0 = tmp[0]; ny0 = tmp[1]; nz0 = tmp[2]; }
-        const nx1 = nx0 * cy0 - nz0 * sy0, nz1 = nx0 * sy0 + nz0 * cy0;
-        const ny2 = ny0 * cp - nz1 * sp, nz2 = ny0 * sp + nz1 * cp;
-        const i0 = F[0], i1 = F[1], i2 = F[2], i3 = F[3];
-        const fx = (PX[i0] + PX[i1] + PX[i2] + PX[i3]) / 4, fy = (PY[i0] + PY[i1] + PY[i2] + PY[i3]) / 4, fz = (PZ[i0] + PZ[i1] + PZ[i2] + PZ[i3]) / 4;
-        if (nx1 * fx + ny2 * fy + nz2 * (fz + D) >= 0) continue;   // 등진 면
-        const sh = AMB + DIF * Math.max(0, nx1 * LX + ny2 * LY + nz2 * LZ), hl = sh > 1 ? (sh - 1) * 420 : 0;
-        let r = r0 * sh + hl, g = g0 * sh + hl, b = b0 * sh + hl;
-        if (wf > 0) { r = lerp(r, 255, wf); g = lerp(g, 255, wf); b = lerp(b, 255, wf); }
-        const pts = [];
-        for (let k = 0; k < 4; k++) { const qi = F[k], kk = D / (D + PZ[qi]); pts.push(cx + PX[qi] * kk, cy + PY[qi] * kk); }
-        faces.push({ d: fz, pts, col: colOf(r, g, b) });
-      }
+    const list = [];
+    for (let i = 0; i < pieces.length; i++) {
+      const p = pieces[i], q = pose(p, t);
+      if (q.sc <= 0.02) continue;
+      const c0 = place(p, q, p.pcx, p.pcy, 0), pc = project(c0[0], c0[1], c0[2], yaw, pitch);
+      // 판 앞면의 방향(빛·앞뒤 판단): 앞면 위 두 점으로 법선을 구한다
+      const a0 = place(p, q, p.pcx, p.pcy, -1), n = [a0[0] - c0[0], a0[1] - c0[1], a0[2] - c0[2]];
+      const cy0 = Math.cos(yaw), sy0 = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const n1x = n[0] * cy0 - n[2] * sy0, n1z = n[0] * sy0 + n[2] * cy0, n2y = n[1] * cp - n1z * sp, n2z = n[1] * sp + n1z * cp;
+      list.push({ p, q, d: pc[2], facing: n2z < 0, light: Math.max(0, n1x * LX + n2y * LY + n2z * LZ) });
     }
-    faces.sort((p, q) => q.d - p.d);
-    // 가볍게 그리기: 테두리 선 없이 칠만 한다(블록 사이 틈이 이음선이 된다). 색은 4단계로 묶어 미리 만든 문자열을 쓰고,
-    // 칠하는 차례(먼 면부터)를 지키면서 같은 색이 이어지는 면들은 한 번에 칠한다.
+    list.sort((a, b) => b.d - a.d);
     ctx.save();
-    if (clipX != null) { ctx.beginPath(); ctx.rect(clipX, 0, W, H); ctx.clip(); }
-    ctx.globalAlpha = alpha;
-    let cur = null;
-    for (let k = 0; k < faces.length; k++) {
-      const f = faces[k], p = f.pts;
-      if (f.col !== cur) {
-        if (cur) ctx.fill();
-        cur = f.col; ctx.fillStyle = cur; ctx.beginPath();
+    for (let i = 0; i < list.length; i++) {
+      const { p, q, facing, light } = list[i];
+      const lt = t - p.tEnd, m = lt < 0 ? 0 : clamp01(lt / 0.22), wf = lt >= 0 && lt < 0.1 ? 1 - lt / 0.1 : 0;
+      for (let k = 0; k < NL; k++) {
+        const kk = facing ? k : NL - 1 - k;                      // 보는 쪽에서 먼 겹부터
+        const z = PD / 2 - kk * PD / (NL - 1), front = kk === NL - 1;
+        const tl = place(p, q, p.X0, p.Y0, z), tr = place(p, q, p.X0 + p.w, p.Y0, z), bl = place(p, q, p.X0, p.Y0 + p.h, z);
+        const A = project(tl[0], tl[1], tl[2], yaw, pitch), Bp = project(tr[0], tr[1], tr[2], yaw, pitch), Cp = project(bl[0], bl[1], bl[2], yaw, pitch);
+        ctx.setTransform(dpr * (Bp[0] - A[0]) / p.w, dpr * (Bp[1] - A[1]) / p.w, dpr * (Cp[0] - A[0]) / p.h, dpr * (Cp[1] - A[1]) / p.h, dpr * A[0], dpr * A[1]);
+        const sx = pad + p.x, sy = pad + p.y;
+        const blit = (img, a) => { if (a > 0.01) { ctx.globalAlpha = a * alpha; ctx.drawImage(img, sx, sy, p.w, p.h, 0, 0, p.w, p.h); } };
+        if (front && facing) {
+          blit(IMG.steel, 1);
+          blit(IMG.steelSide, (1 - m) * (1 - Math.min(1, 0.45 + light * 0.9)) * 0.9);   // 빛을 덜 받는 판은 어둡게
+          blit(IMG.red, m);
+          blit(IMG.white, wf);
+        } else {
+          blit(IMG.steelSide, 1 - m); blit(IMG.redSide, m);
+        }
       }
-      ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
     }
-    if (cur) ctx.fill();
     ctx.restore();
   };
 
@@ -1397,12 +1381,13 @@ function playIegFinale(opt) {
   // ── 불꽃·고리·바닥 그림자 ──
   const sparks = [], rings = [], clanks = [];
   const letterSparks = (li, t) => {
-    const list = vox.filter((v) => v.li === li);
+    const list = pieces.filter((v) => v.li === li);
     if (!list.length) return;
     const cam = camAt(t);
     let sx = 0, sy = 0;
     for (let k = 0; k < 26; k++) {
-      const v = list[Math.floor(Math.random() * list.length)], p = project(v.X, v.Y, -c, cam[0], cam[1]);
+      const v = list[Math.floor(Math.random() * list.length)];
+      const p = project(v.X0 + Math.random() * v.w, v.Y0 + Math.random() * v.h, -PD / 2, cam[0], cam[1]);
       const a = Math.random() * 2 * PI, sp = 120 + Math.random() * 320;
       sx += p[0]; sy += p[1];
       sparks.push({ x: p[0], y: p[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, age: 0, life: 0.35 + Math.random() * 0.4,
@@ -1457,7 +1442,7 @@ function playIegFinale(opt) {
   };
 
   // ── 매끈한 입체 로고(DOM): 같은 글자를 얇게 여러 겹 쌓아 두께를 만든다. 맨 앞 한 겹만 제 색(#FF0000, #333333) ──
-  const depth = c * 3;      // 틈이 메워진 정육면체 세 층의 앞면~뒷면 두께와 같다
+  const depth = PD;         // 판금 조각의 두께와 같다(조각 앞면과 로고 앞면이 같은 깊이라 이음 없이 바뀐다)
   const mixc = (a, b, u) => 'rgb(' + Math.round(lerp(a[0], b[0], u)) + ',' + Math.round(lerp(a[1], b[1], u)) + ',' + Math.round(lerp(a[2], b[2], u)) + ')';
   const layer = (txt, F, left, top, color) => {
     const el = document.createElement('div');
@@ -1478,38 +1463,7 @@ function playIegFinale(opt) {
   shine.classList.add('ieg-egg-shine');
   grpI.appendChild(shine);
   stage.appendChild(grpI);
-  const bigW = layers[0].el.offsetWidth;
 
-  // ── 용접 빛줄기: 정면에 선 블록 글자를 왼쪽에서 오른쪽으로 훑는다. 지나간 자리는 매끈한 글자, 아직인 자리는 블록 글자 ──
-  const wx0 = bigL + ax0 - c * 1.5, wx1 = bigL + ax1 + c * 1.5;
-  const weldX = (t) => { const u = seg(t, T.weld0, T.weld1); return lerp(wx0, wx1, u * u * (3 - 2 * u)); };
-  const drawWeld = (t) => {
-    if (t < T.weld0 || t > T.weld1 + 0.2) return;
-    const x = weldX(t), a = t > T.weld1 ? 1 - seg(t, T.weld1, T.weld1 + 0.2) : clamp01((t - T.weld0) / 0.08);
-    const top = bigT + ay0 - FB * 0.16, bot = bigT + ay1 + FB * 0.16, hh = (bot - top) / 2;
-    ctx2.save();
-    ctx2.globalAlpha = a; ctx2.translate(x, top + hh); ctx2.scale(1, hh / 38);
-    const g = ctx2.createRadialGradient(0, 0, 0, 0, 0, 38);
-    g.addColorStop(0, 'rgba(255,179,0,1)'); g.addColorStop(0.35, 'rgba(255,179,0,0.45)'); g.addColorStop(0.6, 'rgba(255,0,0,0.2)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-    ctx2.fillStyle = g; ctx2.beginPath(); ctx2.arc(0, 0, 38, 0, 2 * PI); ctx2.fill();
-    ctx2.restore();
-    const gc = ctx2.createLinearGradient(0, top, 0, bot);
-    gc.addColorStop(0, 'rgba(255,255,255,0)'); gc.addColorStop(0.18, '#FFFFFF'); gc.addColorStop(0.82, '#FFFFFF'); gc.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx2.globalAlpha = a; ctx2.fillStyle = gc; ctx2.fillRect(x - 2, top, 4, bot - top);
-    ctx2.globalAlpha = 1;
-  };
-  // 빛줄기가 글자에 닿는 자리에서만 불꽃이 튄다(글자 모양 그림에서 그 자리가 칠해져 있는지 본다)
-  const weldSparks = (t) => {
-    const x = weldX(t), ex = Math.floor(pad + x - bigL);
-    for (let k = 0; k < 4; k++) {
-      const y = bigT + ay0 + Math.random() * (ay1 - ay0), ey = Math.floor(pad + y - bigT);
-      if (ex < 0 || ex >= ow || ey < 0 || ey >= oh || px[(ey * ow + ex) * 4 + 3] < 128) continue;
-      const a = -PI / 2 + (Math.random() - 0.7) * 2.2, sp = 120 + Math.random() * 300;
-      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, age: 0, life: 0.25 + Math.random() * 0.35,
-                    col: k % 3 === 0 ? '#FFFFFF' : k % 3 === 1 ? '#FFB300' : '#FF0000' });
-    }
-  };
-  let clipOn = false;
   // IEG NEWS 한 줄: 글자 모양의 가운데가 화면 가운데에 온다. NEWS는 글자마다 따로 세워 한 장씩 펼친다.
   const lineL = cx - (ml.ch[0].l + (ax0 - mb.ch[0].l) * s1 + ml.ch[7].r) / 2;
   const lineT = cy - (ay0 + ay1) / 2 * s1;
@@ -1545,18 +1499,6 @@ function playIegFinale(opt) {
   const applyLogo = (t) => {
     if (t < T.weld0) return;
     stage.style.visibility = '';
-    // 용접하는 동안은 빛줄기가 지나간 왼쪽만 보인다. 겹마다 원근 배율이 달라, 화면의 같은 x가 되도록 겹 좌표로 바꿔 자른다.
-    if (t < T.weld1) {
-      const xs = weldX(t);
-      for (let k = 0; k < layers.length; k++) {
-        const lx = cx + (xs - cx) * (D - layers[k].z) / D;
-        layers[k].el.style.clipPath = 'inset(-60% ' + (bigL + bigW - lx).toFixed(1) + 'px -60% -60%)';
-      }
-      clipOn = true;
-    } else if (clipOn) {
-      for (let k = 0; k < layers.length; k++) layers[k].el.style.clipPath = '';
-      clipOn = false;
-    }
     let yaw = 0, pitch = 0;
     const K = [[T.swing0, 0, 0], [4.95, -28, 8], [5.9, 16, -5], [T.swing1, 0, 0]];
     for (let k = 0; k < K.length - 1; k++) {
@@ -1705,12 +1647,12 @@ function playIegFinale(opt) {
     ctx2.clearRect(0, 0, W, H);
     drawShadow(t, fade);
     if (t < T.ball1 + 0.3) drawFlyIeg(t, fade);
-    if (t >= T.block0 && t < T.weld1) { const cam = camAt(t); drawVoxels(t, cam[0], cam[1], fade, t >= T.weld0 ? weldX(t) : null); }
-    if (abortAt < 0 && t >= T.weld0 && t < T.weld1) weldSparks(t);
+    // 판금 조각은 다 맞물려 매끈한 로고(같은 모양·같은 자리)가 나타날 때까지 그린다
+    if (t >= T.block0 && (t < T.weld0 || abortAt >= 0)) { const cam = camAt(t); drawPlates(t, cam[0], cam[1], fade); }
     stepSparks(dt);
     drawSparks(fade);
     drawRings(t, fade);
-    if (abortAt < 0) { drawWeld(t); applyLogo(t); }
+    if (abortAt < 0) applyLogo(t);
     raf = requestAnimationFrame(frame);
   };
   ov.addEventListener('pointerdown', skip);

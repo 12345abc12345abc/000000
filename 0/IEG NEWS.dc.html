@@ -1143,7 +1143,8 @@ function playIegFinale(opt) {
   document.body.appendChild(ov);
   stage.style.visibility = 'hidden';
   const ctx = cv.getContext('2d'), ctx2 = cv2.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  // 고해상도 화면에서도 1.5배까지만 그린다(정육면체 수천 면을 매 프레임 칠하므로 가볍게)
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   [cv, cv2].forEach((el) => { el.width = Math.round(W * dpr); el.height = Math.round(H * dpr); });
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1199,7 +1200,7 @@ function playIegFinale(opt) {
   const bigL = cx - (ax0 + ax1) / 2, bigT = cy - (ay0 + ay1) / 2;
 
   // 정육면체: 글자를 c px 칸으로 나눠 9점 중 5점 이상 덮인 칸마다 앞뒤로 세 개(3층). 작고 많아서(2천 개 남짓) 촘촘하다.
-  const c = Math.max(4, Math.round(FB * 0.03));
+  const c = Math.max(4, Math.round(FB * 0.034));
   const nx = Math.ceil((ax1 - ax0) / c), ny = Math.ceil((ay1 - ay0) / c);
   const gx = (ax0 + ax1) / 2 - nx * c / 2, gy = (ay0 + ay1) / 2 - ny * c / 2;
   const vox = [];
@@ -1307,6 +1308,14 @@ function playIegFinale(opt) {
     }
     st.x = v.P[9]; st.y = v.P[10]; st.z = v.P[11];
   };
+  // 면 색 문자열 묶음(채널마다 4단계): 매 프레임 수천 개 문자열을 새로 만들지 않는다
+  const COLS = new Map();
+  const colOf = (r, g, b) => {
+    const R = Math.min(255, r & ~3), G = Math.min(255, g & ~3), Bc = Math.min(255, b & ~3), k = (R << 16) | (G << 8) | Bc;
+    let s = COLS.get(k);
+    if (!s) { s = 'rgb(' + R + ',' + G + ',' + Bc + ')'; COLS.set(k, s); }
+    return s;
+  };
   // clipX: 용접 빛줄기의 화면 x. 그 오른쪽(아직 지나가지 않은 쪽)만 그린다(null이면 전부).
   const drawVoxels = (t, yaw, pitch, alpha, clipX) => {
     if (alpha <= 0.01) return;
@@ -1347,19 +1356,25 @@ function playIegFinale(opt) {
         if (wf > 0) { r = lerp(r, 255, wf); g = lerp(g, 255, wf); b = lerp(b, 255, wf); }
         const pts = [];
         for (let k = 0; k < 4; k++) { const qi = F[k], kk = D / (D + PZ[qi]); pts.push(cx + PX[qi] * kk, cy + PY[qi] * kk); }
-        faces.push({ d: fz, pts, col: 'rgb(' + Math.min(255, r | 0) + ',' + Math.min(255, g | 0) + ',' + Math.min(255, b | 0) + ')' });
+        faces.push({ d: fz, pts, col: colOf(r, g, b) });
       }
     }
     faces.sort((p, q) => q.d - p.d);
+    // 가볍게 그리기: 테두리 선 없이 칠만 한다(블록 사이 틈이 이음선이 된다). 색은 4단계로 묶어 미리 만든 문자열을 쓰고,
+    // 칠하는 차례(먼 면부터)를 지키면서 같은 색이 이어지는 면들은 한 번에 칠한다.
     ctx.save();
     if (clipX != null) { ctx.beginPath(); ctx.rect(clipX, 0, W, H); ctx.clip(); }
     ctx.globalAlpha = alpha;
-    ctx.lineWidth = 0.7; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(0,0,0,' + (0.22 - 0.15 * seal).toFixed(3) + ')';
+    let cur = null;
     for (let k = 0; k < faces.length; k++) {
-      const p = faces[k].pts;
-      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
-      ctx.fillStyle = faces[k].col; ctx.fill(); ctx.stroke();
+      const f = faces[k], p = f.pts;
+      if (f.col !== cur) {
+        if (cur) ctx.fill();
+        cur = f.col; ctx.fillStyle = cur; ctx.beginPath();
+      }
+      ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
     }
+    if (cur) ctx.fill();
     ctx.restore();
   };
 

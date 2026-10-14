@@ -1292,24 +1292,7 @@ function playIegFinale(opt) {
       pieces.push(p);
     });
   }
-  // 날아온 IEG가 가운데에서 작은 빨간 원으로 줄어들고, 그 원에서 조각이 하나씩 튀어나와 돌며 제자리로 날아간다
-  // (접힌 채 기다리는 덩어리는 보이지 않는다). 원은 조각이 빠져나갈수록 작아지다 사라진다.
-  const lastLaunch = pieces.reduce((m, p) => Math.max(m, p.s), 0);
-  const drawCore = (t, fade) => {
-    if (t < T.ball1 || t > lastLaunch + 0.25) return;
-    let gone = 0;
-    for (let i = 0; i < pieces.length; i++) if (pieces[i].s <= t) gone++;
-    const left = 1 - gone / Math.max(1, pieces.length);
-    const r = FB * 0.085 * eBackOut(seg(t, T.ball1, T.ball1 + 0.25)) * (0.3 + 0.7 * left) * (1 + 0.08 * Math.sin(t * 22))
-            * (1 - seg(t, lastLaunch, lastLaunch + 0.25));
-    if (r <= 0.5) return;
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.4);
-    g.addColorStop(0, 'rgba(255,0,0,0.32)'); g.addColorStop(1, 'rgba(255,0,0,0)');
-    ctx.globalAlpha = fade; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r * 2.4, 0, 2 * PI); ctx.fill();
-    ctx.fillStyle = '#FF0000'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * PI); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.28, 0, 2 * PI); ctx.fill();
-    ctx.globalAlpha = 1;
-  };
+  // 조각마다 돌던 방향은 그대로 두고(나타나며 푼다), 아무것도 없던 제자리에서 차례로 나타난다
   // 카메라: 비스듬히 위에서 본 덩어리가 돌아 들어오고, 펼쳐지는 동안 반대편으로 돌다가 정면에 철컥 선다
   const camAt = (t) => {
     let yaw, pitch;
@@ -1332,17 +1315,16 @@ function playIegFinale(opt) {
   };
   // 조각의 지금 자세: 0) 톡 튀어나오며 잠금이 풀린다 1) 덩어리 자리에서 미끄러져 나오며 돌던 것을 푼다
   // 2) 경첩으로 펴지며 살짝 지나쳤다 3) 제자리에 쾅 눌려 잠긴다
-  // 조각의 지금 자세: 원에서 튀어나와(작게 시작해 커지며) 앞쪽으로 활처럼 휘어 날아가며 돌던 것을 풀고,
-  // 거의 닿을 무렵 경첩으로 철컥 펴지며 살짝 지나쳤다가 제자리에 쾅 눌려 잠긴다
+  // 조각의 지금 자세: 아무것도 없던 제자리에서 접힌 채 작게 나타나 커지며 돌던 것을 풀고,
+  // 경첩으로 철컥 펴지며 살짝 지나쳤다가 제자리에 쾅 눌려 잠긴다
   const pose = (p, t) => {
     if (t < p.s) return { sc: 0 };
-    const u = seg(t, p.s, p.s + 0.46), e = eOut(u), u2 = eBackOut(seg(t, p.s + 0.3, p.s + 0.66));
+    const e = eOut(seg(t, p.s, p.s + 0.4)), u2 = eBackOut(seg(t, p.s + 0.3, p.s + 0.66));
     const lt = t - p.tEnd;
     const press = lt > 0 && lt < 0.14 ? Math.sin(lt / 0.14 * PI) * PD * 0.35 : 0;
     return {
-      sc: lerp(0.2, 1, eOut(seg(t, p.s, p.s + 0.3))),
-      spin: p.spin * (1 - e), fold: p.fold * (1 - u2),
-      ox: -p.pcx * (1 - e), oy: -p.pcy * (1 - e), oz: -FB * 0.35 * Math.sin(u * PI) + press
+      sc: e, spin: p.spin * (1 - e), fold: p.fold * (1 - u2),
+      ox: 0, oy: 0, oz: PD * 1.5 * (1 - e) + press
     };
   };
   // 판 위의 한 점(최종 자리 X, Y, 겹 깊이 Z)을 지금 자세로 옮긴다
@@ -1412,7 +1394,7 @@ function playIegFinale(opt) {
     const p = flyAt(u), vx = flyVx(u), sp = Math.hypot(vx, (1 - u) * (qy - oy0) + u * (cy - qy)) || 1;
     // 나는 쪽으로 살짝 기울었다가 가운데에 닿으며 바로 선다
     const tilt = lerp(opt.tilt || 0, Math.max(-1, Math.min(1, vx / sp)) * 0.18 * (1 - u), seg(t, 0, 0.2));
-    // 잡힌 순간 한 번 크게 부풀었다(힘을 모으듯) 날아가고, 가운데에 닿으면 작은 빨간 원으로 쏙 줄어든다
+    // 잡힌 순간 한 번 크게 부풀었다(힘을 모으듯) 날아가고, 가운데에 닿으면 쏙 줄어들어 사라진다
     const charge = 1 + 0.45 * Math.sin(seg(t, 0, T.ball0 + 0.12) * PI);
     drawIeg(ctx, p[0], p[1], S0 * (1 + 2 * u) * charge * (1 - eIO(out)), tilt, fade);
   };
@@ -1642,7 +1624,7 @@ function playIegFinale(opt) {
   const once = (k) => (fired[k] ? false : (fired[k] = true));
   const events = (t) => {
     if (abortAt >= 0) return;
-    if (t >= T.ball1 && once('ball')) { rings.push({ t, x: cx, y: cy, r0: 8, r1: 170, dur: 0.55, col: '#FFB300', w: 5 }); ripple(cx, cy, 0.45); }
+    if (t >= T.ball1 && once('ball')) ripple(cx, cy, 0.45);
     // 판 하나가 잠길 때마다 경첩 자리에서 작은 불꽃이 튀고 화면이 살짝 울린다(철컥철컥)
     for (let i = 0; i < pieces.length; i++) {
       const p = pieces[i];
@@ -1707,7 +1689,6 @@ function playIegFinale(opt) {
     ctx2.clearRect(0, 0, W, H);
     drawShadow(t, fade);
     if (t < T.ball1 + 0.3) drawFlyIeg(t, fade);
-    drawCore(t, fade);
     // 판금 조각은 다 맞물려 매끈한 로고(같은 모양·같은 자리)가 나타날 때까지 그린다
     if (t >= T.block0 && (t < T.weld0 || abortAt >= 0)) { const cam = camAt(t); drawPlates(t, cam[0], cam[1], fade); }
     stepSparks(dt);

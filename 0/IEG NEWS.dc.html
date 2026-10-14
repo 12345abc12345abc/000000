@@ -849,7 +849,7 @@ function startDotWave(canvas) {
   const STAR_MAX = 128;   // 이만큼 차면 더 나뉘지 않는다(2의 7제곱). 다 찬 뒤 누르면 모두 하나로 합쳐진다.
   const DIV = 0.75;       // 한 번 나뉘는 데 걸리는 초
   const MERGE = 1.1;      // 모두 하나로 합쳐지는 데 걸리는 초
-  const starR = () => (w < 700 ? 8 : 9.5);
+  const starR = () => (w < 700 ? 5.5 : 6.5);
   const sparks = [];    // 누를 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
   const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
   let clock = 0;
@@ -1026,36 +1026,41 @@ function startDotWave(canvas) {
     }
     if (anyNear !== colony.over) { colony.over = anyNear; document.documentElement.style.cursor = anyNear ? 'pointer' : ''; }
   };
-  // 별빛 하나(가운데 (x, y), 크기 R, 밝기 a): 노란 빛무리 + 반짝이는 네 갈래 빛살(대각선 짧은 빛살) + 하얀 빛 알갱이.
-  // 연회색 바탕에서도 보이도록 빛무리와 빛살은 노랑(#FFB300), 알갱이 둘레는 붉은 기가 돈다.
-  const starGlow = (x, y, R, a, s, seed, rot) => {
+  // 별빛 하나(가운데 (x, y), 크기 R, 밝기 a): 밤하늘 별처럼 작고 또렷한 빛 알갱이에 은은한 빛무리,
+  // 가늘고 끝으로 갈수록 흐려지는 십자 빛살 하나만. 별빛처럼 밝기와 빛살 길이가 조금씩 깜빡인다.
+  // 연회색 바탕에서도 보이도록 빛은 따뜻한 금빛(#FFB300 계열)이다.
+  const starGlow = (x, y, R, a, s, seed) => {
     if (a <= 0.01 || R <= 0.2) return;
-    const tw = 0.75 + 0.25 * Math.sin(s * 5.3 + seed) * Math.sin(s * 2.1 + seed * 2);   // 반짝임
-    ctx.globalAlpha = a;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, R * 2.8);
-    g.addColorStop(0, 'rgba(255,179,0,0.62)'); g.addColorStop(0.3, 'rgba(255,150,0,0.26)'); g.addColorStop(1, 'rgba(255,179,0,0)');
+    const tw = 0.72 + 0.28 * (0.5 + 0.5 * Math.sin(s * 4.1 + seed)) * (0.6 + 0.4 * Math.sin(s * 1.7 + seed * 3));   // 깜빡임 0.72~1
+    // 넓고 옅은 빛무리
+    ctx.globalAlpha = a * tw;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, R * 3.4);
+    g.addColorStop(0, 'rgba(255,196,60,0.42)'); g.addColorStop(0.22, 'rgba(255,186,40,0.16)'); g.addColorStop(1, 'rgba(255,179,0,0)');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x, y, R * 2.8, 0, 6.2832); ctx.fill();
-    // 빛살: 가늘고 끝이 뾰족한 마름모. 긴 것 넷(위아래·양옆), 짧은 것 넷(대각선)
-    ctx.save();
-    ctx.translate(x, y); ctx.rotate(rot);
-    ctx.fillStyle = 'rgba(255,179,0,0.9)';
-    for (let i = 0; i < 8; i++) {
-      const L = (i % 2 ? 1.25 : 2.6) * R * tw, W = R * (i % 2 ? 0.16 : 0.22);
-      ctx.rotate(Math.PI / 4);
-      ctx.beginPath(); ctx.moveTo(0, -W); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.lineTo(-W * 0.5, 0); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, R * 3.4, 0, 6.2832); ctx.fill();
+    // 십자 빛살: 1px 남짓한 가는 빛줄기가 가운데에서 끝으로 흐려진다
+    const L = R * (2.6 + 1.4 * tw);
+    ctx.lineCap = 'round';
+    for (let k = 0; k < 2; k++) {
+      const ux = k ? 0 : 1, uy = k ? 1 : 0;
+      const lg = ctx.createLinearGradient(x - ux * L, y - uy * L, x + ux * L, y + uy * L);
+      lg.addColorStop(0, 'rgba(255,186,40,0)'); lg.addColorStop(0.5, 'rgba(255,200,80,0.85)'); lg.addColorStop(1, 'rgba(255,186,40,0)');
+      ctx.strokeStyle = lg; ctx.lineWidth = Math.max(0.8, R * 0.13);
+      ctx.beginPath(); ctx.moveTo(x - ux * L, y - uy * L); ctx.lineTo(x + ux * L, y + uy * L); ctx.stroke();
     }
-    ctx.restore();
-    const cg = ctx.createRadialGradient(x, y, 0, x, y, R * 0.62);
-    cg.addColorStop(0, '#FFFFFF'); cg.addColorStop(0.55, '#FFF3C4'); cg.addColorStop(1, 'rgba(255,90,0,0.85)');
+    // 빛 알갱이: 하얀 가운데에서 금빛으로 부드럽게 번진다(테두리 없음)
+    ctx.globalAlpha = a;
+    const cg = ctx.createRadialGradient(x, y, 0, x, y, R * 0.9);
+    cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(0.35, 'rgba(255,246,214,1)');
+    cg.addColorStop(0.65, 'rgba(255,200,70,0.75)'); cg.addColorStop(1, 'rgba(255,179,0,0)');
     ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(x, y, R * 0.62, 0, 6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, R * 0.9, 0, 6.2832); ctx.fill();
   };
   // 별 하나. 나뉘는 중(p 0~1)이면 한 번 밝게 부풀었다가 빛이 실처럼 늘어나며 둘로 갈라지고,
   // 갓 갈라진 별은 반짝 빛나며 자리를 잡는다. 합쳐지는 중이면 짧은 빛꼬리를 끌며 가운데 별로 빨려 든다.
   const drawStar = (c, s, p) => {
     const R = starR() * (1 + 0.3 * c.hov) * c.sc * (1 + c.pulse) * (1 + 0.35 * c.jig);
-    const a = c.fade * c.al, rot = s * 0.25 + c.seed;
+    const a = c.fade * c.al;
     const shake = Math.sin(s * 38 + c.seed) * 0.6 * c.hov;
     const x = c.px + shake, y = c.py;
     if (p >= 0) {
@@ -1066,12 +1071,12 @@ function startDotWave(canvas) {
       const link = Math.max(0, 1 - p / 0.8);
       if (off > 0.5 && link > 0) {
         ctx.globalAlpha = a * link;
-        ctx.strokeStyle = '#FFB300'; ctx.lineCap = 'round'; ctx.lineWidth = R * 0.5 * link + 0.5;
+        ctx.strokeStyle = 'rgba(255,196,60,0.8)'; ctx.lineCap = 'round'; ctx.lineWidth = 1.4 * link + 0.4;
         ctx.beginPath(); ctx.moveTo(x - ux * off, y - uy * off); ctx.lineTo(x + ux * off, y + uy * off); ctx.stroke();
       }
       const r2 = R * swell * (1 - 0.25 * Math.sin(Math.PI * p));
-      starGlow(x - ux * off, y - uy * off, r2, a, s, c.seed, rot);
-      starGlow(x + ux * off, y + uy * off, r2, a, s, c.seed + 1.7, rot + 0.4);
+      starGlow(x - ux * off, y - uy * off, r2, a, s, c.seed);
+      starGlow(x + ux * off, y + uy * off, r2, a, s, c.seed + 1.7);
     } else {
       // 합쳐지는 중: 지나온 쪽으로 짧은 빛꼬리
       if (colony.merge >= 0 && c !== colony.core && c.sx !== undefined) {
@@ -1079,13 +1084,13 @@ function startDotWave(canvas) {
         if (d > 2) {
           const L = Math.min(d, 46) / d;
           const gr = ctx.createLinearGradient(x, y, x + dx * L, y + dy * L);
-          gr.addColorStop(0, 'rgba(255,179,0,0.85)'); gr.addColorStop(1, 'rgba(255,179,0,0)');
+          gr.addColorStop(0, 'rgba(255,196,60,0.7)'); gr.addColorStop(1, 'rgba(255,179,0,0)');
           ctx.globalAlpha = a;
-          ctx.strokeStyle = gr; ctx.lineCap = 'round'; ctx.lineWidth = R * 0.55;
+          ctx.strokeStyle = gr; ctx.lineCap = 'round'; ctx.lineWidth = 1.3;
           ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * L, y + dy * L); ctx.stroke();
         }
       }
-      starGlow(x, y, R, a, s, c.seed, rot);
+      starGlow(x, y, R, a, s, c.seed);
     }
     // 커서가 가까이 오면 노란 테가 둘레로 번져 나간다
     if (c.hov > 0.02) {
@@ -1093,7 +1098,7 @@ function startDotWave(canvas) {
         const f = (s * 1.4 + q * 0.5) % 1;
         ctx.globalAlpha = c.hov * (1 - f) * 0.9 * a;
         ctx.strokeStyle = '#FFB300'; ctx.lineWidth = 2.2 * (1 - f) + 0.6;
-        ctx.beginPath(); ctx.arc(c.px, c.py, R * 1.6 + 8 + f * 22, 0, 6.2832); ctx.stroke();
+        ctx.beginPath(); ctx.arc(c.px, c.py, R * 2 + 8 + f * 20, 0, 6.2832); ctx.stroke();
       }
     }
   };

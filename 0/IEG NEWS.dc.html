@@ -1295,13 +1295,14 @@ function playIegFinale(opt) {
   // 처음엔 화면 가운데에 접힌 채 겹겹이 쌓인 덩어리다(조각마다 조금씩 어긋나고 앞뒤로 포개진다)
   const rnd = (a, b) => a + Math.random() * (b - a);
   pieces.forEach((p, i) => {
-    p.ox = rnd(-0.12, 0.12) * FB - p.pcx; p.oy = rnd(-0.12, 0.12) * FB - p.pcy; p.oz = (i - pieces.length / 2) * PD * 0.45;
+    // 덩어리로 뭉치지 않는다: 터진 자리에서 각자 제 글자 자리로 날아가, 경첩 쪽으로 접힌 채 조금 뒤에서 기다린다
+    p.ox = 0; p.oy = 0; p.oz = PD * rnd(1, 2.2); p.spin = 0;
     p.born = T.block0 + i * 0.012;
   });
   // 카메라: 비스듬히 위에서 본 덩어리가 돌아 들어오고, 펼쳐지는 동안 반대편으로 돌다가 정면에 철컥 선다
   const camAt = (t) => {
     let yaw, pitch;
-    if (t < T.unfold) { const e = eOut(seg(t, T.block0, T.unfold)); yaw = 38 + 230 * (1 - e); pitch = 24; }
+    if (t < T.unfold) { const e = eOut(seg(t, T.block0, T.unfold)); yaw = 38 + 50 * (1 - e); pitch = 24; }
     else if (t < T.cam1) { const e = eIO(seg(t, T.unfold, T.cam1)); yaw = lerp(38, -30, e); pitch = lerp(24, 13, e); }
     else { const e = eBackOut(seg(t, T.cam1, T.lock)); yaw = lerp(-30, 0, e); pitch = lerp(13, 0, e); }
     return [yaw * PI / 180, pitch * PI / 180];
@@ -1525,14 +1526,8 @@ function playIegFinale(opt) {
   const applyLogo = (t) => {
     if (t < T.weld0) return;
     stage.style.visibility = '';
-    let yaw = 0, pitch = 0;
-    const K = [[T.swing0, 0, 0], [4.95, -28, 8], [5.9, 16, -5], [T.swing1, 0, 0]];
-    for (let k = 0; k < K.length - 1; k++) {
-      if (t >= K[k][0] && t < K[k + 1][0]) {
-        const e = eIO(seg(t, K[k][0], K[k + 1][0]));
-        yaw = lerp(K[k][1], K[k + 1][1], e); pitch = lerp(K[k][2], K[k + 1][2], e);
-      }
-    }
+    // 로고는 정면을 지킨다(좌우로 돌아보는 시점 이동은 어색하다는 사용자 의견으로 뺐다)
+    const yaw = 0, pitch = 0;
     const fe = eIO(seg(t, T.fly, T.land));
     let sc = 1, tx = 0, ty = 0;
     if (fe > 0) {

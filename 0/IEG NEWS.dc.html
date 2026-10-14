@@ -908,15 +908,18 @@ function startDotWave(canvas) {
     const dx = egg.tx - egg.x, dy = egg.ty - egg.y, d = Math.hypot(dx, dy);
     if (egg.rest > 0) { egg.rest -= dt; if (egg.rest <= 0) pickTarget(); }
     else if (d < 14) {
-      // 빈 곳에 닿으면 반쯤은 잠깐 머물러(찾아 누를 틈) 주고, 아니면 바로 다음 곳으로 간다
-      if (egg.free && Math.random() < 0.5) egg.rest = 0.7 + Math.random() * 0.9; else pickTarget();
+      // 누른 자리까지 쫓아왔으면 거기서 잠깐 머문다. 그 밖에는 빈 곳에 닿으면 반쯤은 잠깐 머물러(찾아 누를 틈) 주고,
+      // 아니면 바로 다음 곳으로 간다
+      if (egg.chase) { egg.chase = false; egg.rest = 1.2; }
+      else if (egg.free && Math.random() < 0.5) egg.rest = 0.7 + Math.random() * 0.9; else pickTarget();
     }
     // 커서가 (패널이 아닌 빈 곳에서) 가까이 오면 반응한다: hov 0~1. 반응하는 동안은 느려져 잡기 쉽다.
     const near = mouse.on && mouse.bg && Math.hypot(mouse.x - egg.px, mouse.y - egg.py) < 44;
     egg.hov += ((near ? 1 : 0) - egg.hov) * Math.min(1, dt * 10);
     if (near !== egg.over) { egg.over = near; document.documentElement.style.cursor = near ? 'pointer' : ''; }
-    const sp = egg.rest > 0 ? 0 : 120 * Math.min(1, 0.35 + d / 120) * (1 - 0.75 * egg.hov);
-    const k = Math.min(1, dt * 2.4);
+    // 쫓아올 때는 빠르게(약 2.6배) 방향을 틀어 달려온다
+    const sp = egg.rest > 0 ? 0 : 120 * (egg.chase ? 2.6 : 1) * Math.min(1, 0.35 + d / 120) * (1 - 0.75 * egg.hov);
+    const k = Math.min(1, dt * (egg.chase ? 5 : 2.4));
     egg.vx += ((d ? dx / d : 0) * sp - egg.vx) * k;
     egg.vy += ((d ? dy / d : 0) * sp - egg.vy) * k;
     egg.x += egg.vx * dt; egg.y += egg.vy * dt;
@@ -1053,6 +1056,8 @@ function startDotWave(canvas) {
       return;
     }
     pushRipple(smallRipple(e.clientX, e.clientY));
+    // 빈 바탕을 누르면 날아다니던 IEG가 그 자리로 쫓아온다(가려진 자리를 지나가도 괜찮다)
+    if (egg.alive && !egg.busy) { egg.tx = e.clientX; egg.ty = e.clientY; egg.free = true; egg.rest = 0; egg.chase = true; }
   };
   const onVis = () => (document.hidden ? stop() : start());
 
@@ -1234,6 +1239,16 @@ function playIegFinale(opt) {
     }),
     steelSide: paint('#2E2E33'), red: paint('#FF0000'), redSide: paint('#9A0000'), white: paint('#FFFFFF')
   };
+  // 모서리 빛(베벨): 글자 테두리를 따라 안쪽으로 가는 흰 띠. 깎아 낸 금속판처럼 모서리가 반짝인다.
+  IMG.edge = (() => {
+    const el = document.createElement('canvas'); el.width = ow; el.height = oh;
+    const g = el.getContext('2d');
+    g.font = o.font; g.lineJoin = 'round'; g.strokeStyle = '#FFFFFF'; g.lineWidth = Math.max(2, FB * 0.016);
+    for (let i = 0; i < 3; i++) g.strokeText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+    g.globalCompositeOperation = 'destination-in'; g.fillStyle = '#000';
+    for (let i = 0; i < 3; i++) g.fillText('IEG'[i], pad + mb.ch[i].l, pad + mb.base);
+    return el;
+  })();
   const inkAt = (x, y) => {   // 글자 상자 좌표
     const sx = Math.floor(pad + x), sy = Math.floor(pad + y);
     return sx >= 0 && sy >= 0 && sx < ow && sy < oh && px[(sy * ow + sx) * 4 + 3] > 127;
@@ -1287,8 +1302,8 @@ function playIegFinale(opt) {
   const camAt = (t) => {
     let yaw, pitch;
     if (t < T.unfold) { const e = eOut(seg(t, T.block0, T.unfold)); yaw = 38 + 230 * (1 - e); pitch = 24; }
-    else if (t < T.cam1) { const e = eIO(seg(t, T.unfold, T.cam1)); yaw = lerp(38, -18, e); pitch = lerp(24, 10, e); }
-    else { const e = eBackOut(seg(t, T.cam1, T.lock)); yaw = lerp(-18, 0, e); pitch = lerp(10, 0, e); }
+    else if (t < T.cam1) { const e = eIO(seg(t, T.unfold, T.cam1)); yaw = lerp(38, -30, e); pitch = lerp(24, 13, e); }
+    else { const e = eBackOut(seg(t, T.cam1, T.lock)); yaw = lerp(-30, 0, e); pitch = lerp(13, 0, e); }
     return [yaw * PI / 180, pitch * PI / 180];
   };
   const project = (X, Y, Z, yaw, pitch) => {
@@ -1303,14 +1318,17 @@ function playIegFinale(opt) {
     else if (ax === 1) { tmp[0] = x * ca + z * sa; tmp[1] = y; tmp[2] = -x * sa + z * ca; }
     else { tmp[0] = x * ca - y * sa; tmp[1] = x * sa + y * ca; tmp[2] = z; }
   };
-  // 조각의 지금 자세: 1) 접힌 채 덩어리 자리에서 미끄러져 나오며 돌던 것을 푼다 2) 경첩으로 펴지며 살짝 지나쳤다 철컥
+  // 조각의 지금 자세: 0) 톡 튀어나오며 잠금이 풀린다 1) 덩어리 자리에서 미끄러져 나오며 돌던 것을 푼다
+  // 2) 경첩으로 펴지며 살짝 지나쳤다 3) 제자리에 쾅 눌려 잠긴다
   const pose = (p, t) => {
-    const u1 = eIO(seg(t, p.s, p.s + 0.34)), u2 = eBackOut(seg(t, p.s + 0.36, p.s + 0.66));
+    const u0 = seg(t, p.s, p.s + 0.1), u1 = eIO(seg(t, p.s + 0.06, p.s + 0.38)), u2 = eBackOut(seg(t, p.s + 0.4, p.s + 0.66));
     const lt = t - p.tEnd;
+    const pop = u0 > 0 && u0 < 1 ? -Math.sin(u0 * PI) * PD * 0.9 : 0;
+    const press = lt > 0 && lt < 0.14 ? Math.sin(lt / 0.14 * PI) * PD * 0.35 : 0;
     return {
       sc: eBackOut(seg(t, p.born, p.born + 0.3)),
       spin: p.spin * (1 - u1), fold: p.fold * (1 - u2),
-      ox: p.ox * (1 - u1), oy: p.oy * (1 - u1), oz: p.oz * (1 - u1) - (lt > 0 && lt < 0.12 ? Math.sin(lt / 0.12 * PI) * PD * 0.5 : 0)
+      ox: p.ox * (1 - u1), oy: p.oy * (1 - u1), oz: p.oz * (1 - u1) + pop + press
     };
   };
   // 판 위의 한 점(최종 자리 X, Y, 겹 깊이 Z)을 지금 자세로 옮긴다
@@ -1353,7 +1371,11 @@ function playIegFinale(opt) {
           blit(IMG.steel, 1);
           blit(IMG.steelSide, (1 - m) * (1 - Math.min(1, 0.45 + light * 0.9)) * 0.9);   // 빛을 덜 받는 판은 어둡게
           blit(IMG.red, m);
-          blit(IMG.white, wf);
+          // 빛을 정면으로 받는 각도를 지날 때 판 전체가 번쩍(반사광), 모서리는 늘 반짝인다. 둘 다 쾅 하는 순간까지 사라져
+          // 매끈한 로고(무늬 없는 빨강)로 이음 없이 넘어간다.
+          const gone = 1 - seg(t, T.lock - 0.15, T.lock + 0.1);
+          blit(IMG.white, Math.max(wf, Math.pow(light, 10) * 0.55 * gone));
+          blit(IMG.edge, (0.6 - 0.3 * m) * gone);
         } else {
           blit(IMG.steelSide, 1 - m); blit(IMG.redSide, m);
         }
@@ -1596,6 +1618,19 @@ function playIegFinale(opt) {
   const events = (t) => {
     if (abortAt >= 0) return;
     if (t >= T.ball1 && once('ball')) { rings.push({ t, x: cx, y: cy, r0: 8, r1: 170, dur: 0.55, col: '#FFB300', w: 5 }); ripple(cx, cy, 0.45); }
+    // 판 하나가 잠길 때마다 경첩 자리에서 작은 불꽃이 튀고 화면이 살짝 울린다(철컥철컥)
+    for (let i = 0; i < pieces.length; i++) {
+      const p = pieces[i];
+      if (p.locked || t < p.tEnd) continue;
+      p.locked = true;
+      const cam = camAt(t), h = project(p.hx, p.hy, -PD / 2, cam[0], cam[1]);
+      for (let k = 0; k < 7; k++) {
+        const a = Math.random() * 2 * PI, sp = 90 + Math.random() * 230;
+        sparks.push({ x: h[0], y: h[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, age: 0, life: 0.25 + Math.random() * 0.3,
+                      col: k % 2 ? '#FFB300' : '#FF0000' });
+      }
+      clanks.push({ t, a: 1.2 });
+    }
     for (let li = 0; li < 3; li++) if (cnt[li] && t >= lockAt[li] && once('l' + li)) { clanks.push({ t, a: 3.5 }); letterSparks(li, t); }
     if (t >= T.lock && once('lock')) {
       clanks.push({ t, a: 11 });

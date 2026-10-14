@@ -185,6 +185,48 @@
   .ieg-sheet:active { transform: scale(0.99); }
   .ieg-sheet img { display: block; width: 100%; height: auto; }
 
+  /* ── 홈 소식지: 한 번에 한 면을 크게. 두 장 이상인 호는 뒷장이 오른쪽 아래로 살짝 비어져 나와(--peek)
+     뒤에 한 장 더 있는 게 보이고, 양옆 화살표(휴대폰은 좌우로 밀기)로 넘긴다.
+     넘기면 앞장이 왼쪽으로 빠졌다가 뒤로 들어가고, 뒷장이 앞으로 나온다. 모든 면은 같은 칸에 겹쳐 놓는다. ── */
+  .ieg-stack-wrap { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
+  .ieg-stack { --peek: 12px; display: grid; justify-items: center; align-items: start; touch-action: pan-y; }
+  .ieg-stack.is-n2 { padding: 0 var(--peek) var(--peek) 0; }
+  .ieg-stack.is-n3 { padding: 0 calc(2 * var(--peek)) calc(2 * var(--peek)) 0; }
+  .ieg-stack img { pointer-events: none; -webkit-user-drag: none; }   /* 마우스로 밀 때 그림이 끌려 나오지 않게 */
+  .ieg-stack > .ieg-sheet { grid-area: 1 / 1; transition: transform .55s var(--ease), filter .55s var(--ease), opacity .3s var(--ease); }
+  .ieg-stack > .is-front { z-index: 4; }
+  .ieg-stack > .is-back { z-index: 3; transform: translate(var(--peek), var(--peek)); filter: brightness(0.96); cursor: pointer; }
+  .ieg-stack > .is-back2 { z-index: 2; transform: translate(calc(2 * var(--peek)), calc(2 * var(--peek))); filter: brightness(0.92); pointer-events: none; }
+  .ieg-stack > .is-far { z-index: 1; transform: translate(calc(2 * var(--peek)), calc(2 * var(--peek))); opacity: 0; pointer-events: none; }
+  /* 뒷장은 커서를 올려도 들리지 않고 조금 더 비어져 나온다(눌러서 넘길 수 있다는 표시) */
+  .ieg-stack > .is-back:hover { transform: translate(calc(var(--peek) + 4px), calc(var(--peek) + 4px)); }
+  .ieg-stack > .is-back::after, .ieg-stack > .is-back2::after { display: none; }
+  /* 넘길 때: 앞장이었던 면은 왼쪽으로 빠졌다가 뒤로 들어가 뒷장 자리에 놓인다 */
+  .ieg-stack > .is-out { animation: iegSheetOut .6s var(--ease) both; }
+  @keyframes iegSheetOut {
+    0% { transform: none; z-index: 5; }
+    45% { transform: translateX(-58%) rotate(-4deg); z-index: 5; }
+    46% { z-index: 2; }
+    100% { transform: translate(var(--peek), var(--peek)); z-index: 2; }
+  }
+  /* 앞으로 넘길 때(이전 면): 새 앞장이 왼쪽에서 들어와 위에 놓인다 */
+  .ieg-stack > .is-in { animation: iegSheetBack .6s var(--ease) both; }
+  @keyframes iegSheetBack {
+    0% { transform: translate(var(--peek), var(--peek)); z-index: 2; }
+    45% { transform: translateX(-58%) rotate(-4deg); z-index: 2; }
+    46% { z-index: 5; }
+    100% { transform: none; z-index: 5; }
+  }
+  /* 넘기기 화살표: 지면 양옆 가운데, 사진 위 반투명 원. 마우스는 지면에 올렸을 때, 터치 화면은 늘 보인다 */
+  .ieg-flip { position: absolute; top: 50%; margin-top: -22px; z-index: 6; background: rgba(210,210,215,0.64); }
+  .ieg-flip.is-prev { left: 10px; }
+  .ieg-flip.is-next { right: calc(10px + var(--peek, 12px)); }
+  .ieg-flip.is-hidden { display: none; }
+  @media (hover: hover) {
+    .ieg-flip { opacity: 0; transition: opacity .25s var(--ease), background .2s var(--ease); }
+    .ieg-stack-wrap:hover .ieg-flip, .ieg-flip:focus-visible { opacity: 1; }
+  }
+
   /* ── 홈: PC(1024px 이상)에서는 왼쪽 소식지, 오른쪽 언론 보도 두 패널이 한 화면에 다 들어온다.
      좁은 화면에서는 위아래로 쌓인다. ── */
   .ieg-home { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(20px, 4vw, 40px); }
@@ -263,6 +305,9 @@
     .ieg-home .ieg-pages { display: flex; justify-content: center; gap: 16px; }
     .ieg-home .ieg-sheet { flex: 0 1 auto; width: auto; }
     .ieg-home .ieg-sheet img { width: auto; height: auto; max-width: 100%; max-height: var(--nl-h); }
+    /* 뒷장이 비어져 나오는 만큼 지면을 줄여 패널 높이는 그대로 */
+    .ieg-home .ieg-stack.is-n2 .ieg-sheet img { max-height: calc(var(--nl-h) - var(--peek)); }
+    .ieg-home .ieg-stack.is-n3 .ieg-sheet img { max-height: calc(var(--nl-h) - 2 * var(--peek)); }
     /* 두 패널 맞추기: 카드 줄들이 남는 높이를 나눠 갖고, 카드 사진이 그만큼 커져 언론 보도 아래 끝이 소식지 지면 아래 끝과 맞는다.
        사진은 16:9에서 4:3까지만 커진다(그 이상 늘리면 사진 내용이 많이 잘린다). 카드 폭 = (줄 폭 − 칸 간격 2개) / 3. */
     .ieg-home-press .ieg-panel-in { container-type: inline-size; }
@@ -456,7 +501,7 @@
   }
   .ieg-zoom { animation: iegZoom .45s var(--ease) both; }
 
-  /* ── 이스터에그: 숨은 IEG를 잡으면 잠깐 씌우는 변신 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
+  /* ── 제호 변신 장면(처음 들어올 때·제호를 누를 때) 동안 잠깐 씌우는 무대(playIegFinale). 끝나면 스스로 지워진다. ── */
   /* 홈 첫 진입 변신 장면 직전: 항목(패널)과 날짜 게이지를 숨겨 빈 무대에서 시작한다 */
   html.ieg-pre .ieg-panel, html.ieg-pre .ieg-rail, html.ieg-pre .ieg-nav { opacity: 0; }
   .ieg-egg { position: fixed; inset: 0; z-index: 60; overflow: hidden; perspective-origin: 50% 50%; touch-action: none; }
@@ -518,13 +563,18 @@
         <sc-for list="{{ latestIssue }}" as="g" hint-placeholder-count="1">
           <article class="ieg-issue">
             <p class="ieg-issue-label"><span><span class="ieg-issue-y">{{ g.year }}.</span><span class="ieg-issue-m">{{ g.month }}</span></span></p>
-            <!-- 지면 한 장이 버튼 하나라, 누른 면이 그대로 확대 보기에 뜬다. -->
-            <div class="{{ g.pagesClass }}">
-              <sc-for list="{{ g.previews }}" as="p" hint-placeholder-count="1">
-                <button class="ieg-sheet" onClick="{{ p.open }}" aria-label="{{ p.alt }}">
-                  <img src="{{ p.src }}" alt="" loading="lazy">
-                </button>
-              </sc-for>
+            <!-- 한 번에 한 면. 두 장 이상이면 다음 장이 뒤에 살짝 비어져 나오고, 양옆 화살표(휴대폰은 밀기)로 넘긴다.
+                 앞장을 누르면 확대 보기, 비어져 나온 뒷장을 누르면 그 장으로 넘긴다. -->
+            <div class="ieg-stack-wrap">
+              <div class="{{ g.stackClass }}">
+                <sc-for list="{{ g.stack }}" as="p" hint-placeholder-count="1">
+                  <button class="{{ p.cls }}" onClick="{{ p.open }}" aria-label="{{ p.alt }}" tabIndex="{{ p.tab }}">
+                    <img src="{{ p.src }}" alt="" loading="lazy">
+                  </button>
+                </sc-for>
+              </div>
+              <button class="{{ g.flipPrevClass }}" onClick="{{ nlPrev }}" aria-label="이전 면">‹</button>
+              <button class="{{ g.flipNextClass }}" onClick="{{ nlNext }}" aria-label="다음 면">›</button>
             </div>
           </article>
         </sc-for>
@@ -690,7 +740,6 @@ const ARTICLES = [
   { m:'내외경제TV', d:'2026-09-04', t:'아이지, 주요 제조사 설비 호환 스마트 제조 실습 플랫폼 구축', u:'https://www.nbntv.co.kr/news/articleView.html?idxno=4024573', img:'https://cdn.nbntv.co.kr/news/photo/202609/4024573_298745_1348.jpg' },
 
   { m:'전자신문', d:'2026-08-27', t:'[2026 전남광주미래산업박람회] 아이지, 스마트팩토리 등 미래산업 플랫폼·장비 홍보', u:'https://www.etnews.com/20260826000174', img:'https://img.etnews.com/news/article/2026/08/26/news-p.v1.20260826.07c576e9188840a592fdb58cdf3f9801_P1.jpg' },
-  { m:'캐드앤그래픽스', d:'2026-08-07', t:'아이지, 2026년 제2차 혁신 프리미어 1000 선정… 글로벌 테크에듀 기업 도약', u:'https://www.cadgraphics.co.kr/newsview.php?catecode=2&num=78816&pages=news&sub=news01', img:'https://www.cadgraphics.co.kr/UPLOAD/editor/2026/08/07//202685538212SgdoS9ZOT_editor_image.png' },
   { m:'월간로봇기술', d:'2026-08-21', t:'(주)아이지, 디지털트윈 기반 아이지랩닷컴 및 현장형 실습 공간 오픈랩 개관', u:'https://robotzine.co.kr/detail/278953' },
   { m:'월간로봇기술', d:'2026-08-21', t:'[인터뷰] 아이지 김창일 대표 “내일의 기술을 오늘의 교실에 구현할 것!”', u:'https://robotzine.co.kr/entry/278954' },
 
@@ -823,15 +872,13 @@ const READ_GAP = 48;   // 판정선은 탭 줄 아래 이만큼 (JUMP_GAP보다 
 // 커서 가까이의 점은 물이 갈라지듯 옆으로 밀려나며 빨갛게 물든다(커서를 따라다니지는 않는다).
 // 패널 밖 빈 곳을 누르면 그 자리에서 노란 물결이 퍼져 나간다.
 // 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 멈춘 점만 그린다. 페이지가 처음 뜰 때 따로 나타나는 효과는 없다.
-// 별빛(이스터에그): 반짝이는 별빛 하나가 패널 뒤 배경을 떠다닌다. 누르면 빛이 갈라지듯 둘로 나뉘고, 그 뒤로 어느 별이든
-// 누르면 모든 별이 한꺼번에 나뉘어 2 → 4 → 8 → 16 …으로 두 배씩 늘고, 다 찬 뒤 누르면 하나로 합쳐진다. 새로고침하거나 제호를 누르면 사라지고
-// 다시 하나부터 시작한다. 제호 변신 장면(playIegFinale)은 처음 들어올 때와 제호를 누를 때만 나온다(play).
+// 제호 변신 장면(playIegFinale)은 처음 들어올 때와 제호를 누를 때만 나온다(play).
 function startDotWave(canvas) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let w = 0, h = 0, gap = 26, cols = 0, rows = 0, raf = 0, last = 0;
-  const mouse = { x: 0, y: 0, on: false, bg: false };   // bg: 커서가 패널·메뉴가 아닌 빈 배경 위에 있음
+  let w = 0, h = 0, gap = 26, cols = 0, rows = 0, raf = 0;
+  const mouse = { x: 0, y: 0, on: false };
   const ripples = [];   // { x, y, start, speed, life, amp, band }
   const R = 150;        // 커서가 점을 미는 반경
 
@@ -839,292 +886,14 @@ function startDotWave(canvas) {
   const shockwave = (x, y, p) => ({ x, y, start: -1, speed: 520 + 320 * p, life: 1.7 + 0.6 * p, amp: 14 + 26 * p, band: 80 + 40 * p });
   const pushRipple = (r) => { ripples.push(r); if (ripples.length > 6) ripples.shift(); };
 
-  // ── 별 ──
-  // 별마다 (x, y): 자리, (px, py): 흔들림까지 더한 그리는 자리, (tx, ty): 가는 곳, rest: 빈 곳에서 머무는 남은 초,
-  // chase: 누른 자리로 쫓아가는 중, hov: 커서가 가까이 온 정도(0~1), fade: 나타난 정도, ax: 나뉘는 방향(라디안)
-  const stars = [];
-  // wait: 첫 별이 나타날 때까지 남은 초, busy: 변신 장면이 도는 중, split: 나뉘기 시작한 뒤 지난 초(-1이면 쉬는 중),
-  // merge: 합쳐지기 시작한 뒤 지난 초(-1이면 쉬는 중), core: 합쳐지는 가운데 별
-  const colony = { wait: 3.5, busy: false, over: false, split: -1, merge: -1, core: null };
-  const STAR_MAX = 128;   // 이만큼 차면 더 나뉘지 않는다(2의 7제곱). 다 찬 뒤 누르면 모두 하나로 합쳐진다.
-  const DIV = 0.75;       // 한 번 나뉘는 데 걸리는 초
-  const MERGE = 1.1;      // 모두 하나로 합쳐지는 데 걸리는 초
-  const starR = () => (w < 700 ? 5.5 : 6.5);
-  const sparks = [];    // 누를 때 튀는 불꽃 { x, y, vx, vy, age, life, col }
-  const EGG_BLOCK = '.ieg-panel, .ieg-nav, .ieg-rail, .ieg-top, .ieg-modal';
-  let clock = 0;
-  // 패널·머리 막대에 가리지 않는 빈 곳을 모은다. 화면을 16px 간격으로 훑어 실제로 보이는 자리(좁은 화면의
-  // 양옆 여백·패널 사이 틈 포함)를 모아 두고, 별이 많아도 가볍도록 0.5초 동안 다시 쓴다(스크롤하면 패널이 움직인다).
-  let spots = [], spotsAt = -9;
-  const findSpots = () => {
-    if (clock - spotsAt < 0.5) return;
-    spotsAt = clock;
-    const rs = Array.from(document.querySelectorAll(EGG_BLOCK), el => el.getBoundingClientRect());
-    spots = [];
-    for (let y = 8; y < h - 4; y += 16) for (let x = 8; x < w - 4; x += 16) {
-      if (!rs.some(r => x > r.left - 8 && x < r.right + 8 && y > r.top - 8 && y < r.bottom + 8)) spots.push(x, y);
-    }
-  };
-  // 빈 곳 하나로 간다(지금 자리에서 너무 가까운 곳은 피한다). 빈 곳이 없으면 아무 데로나 지나간다.
-  const pickTarget = (c) => {
-    findSpots();
-    for (let k = 0; k < 8 && spots.length; k++) {
-      const i = Math.floor(Math.random() * spots.length / 2) * 2;
-      if (k < 7 && Math.hypot(spots[i] - c.x, spots[i + 1] - c.y) < 120) continue;
-      c.tx = spots[i]; c.ty = spots[i + 1]; c.free = true;
-      return;
-    }
-    c.tx = 20 + Math.random() * (w - 40); c.ty = 20 + Math.random() * (h - 40); c.free = false;
-  };
-  const newStar = (x, y, vx, vy, fade) => ({ x, y, px: x, py: y, vx, vy, tx: x, ty: y, free: false, rest: 0, chase: false,
-                                             hov: 0, fade, ax: 0, seed: Math.random() * 9, sc: 1, al: 1, pulse: 0, jig: 0, born: 0 });
-  // 첫 별은 화면 네 가장자리 중 한 곳 바깥에서 날아 들어온다
-  const spawnStar = () => {
-    const side = Math.floor(Math.random() * 4);
-    const x = side === 0 ? -30 : side === 1 ? w + 30 : 40 + Math.random() * (w - 80);
-    const y = side === 2 ? -30 : side === 3 ? h + 30 : 120 + Math.random() * (h - 160);
-    const dx = w / 2 - x, dy = h / 2 - y, d = Math.hypot(dx, dy) || 1;
-    const c = newStar(x, y, dx / d * 160, dy / d * 160, 0);
-    stars.push(c);
-    pickTarget(c);
-  };
-  const burst = (x, y, n) => {
-    for (let k = 0; k < n; k++) {
-      const a = Math.random() * 6.2832, v = 120 + Math.random() * 220;
-      sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, age: 0, life: 0.3 + Math.random() * 0.3,
-                    col: k % 2 ? '#FF0000' : '#FFB300' });
-    }
-  };
-  // 별을 누르면 모든 별이 한꺼번에 나뉘기 시작한다(나뉘는 중이거나 다 찼으면 그대로)
-  const divide = () => {
-    if (colony.split >= 0 || stars.length * 2 > STAR_MAX) return;
-    colony.split = 0;
-    // 나뉘는 방향은 별마다 제각각, 움직이던 쪽과 비스듬히
-    stars.forEach((c) => {
-      const mv = Math.hypot(c.vx, c.vy) > 20 ? Math.atan2(c.vy, c.vx) : Math.random() * 6.2832;
-      c.ax = mv + Math.PI / 2 + (Math.random() - 0.5) * 1.2;
-      c.rest = 0; c.chase = false;
-    });
-  };
-  // 다 나뉘면 별 하나가 그 자리의 두 별로 바뀌고, 둘은 서로 밀어내며 벌어진 뒤 각자 빈 곳으로 간다
-  const finishSplit = () => {
-    colony.split = -1;
-    const off = starR() * 1.05, n = stars.length;
-    for (let k = 0; k < n; k++) {
-      const c = stars[k], ux = Math.cos(c.ax), uy = Math.sin(c.ax);
-      for (const sg of [-1, 1]) {
-        const d = newStar(c.x + ux * off * sg, c.y + uy * off * sg, c.vx * 0.3 + ux * 110 * sg, c.vy * 0.3 + uy * 110 * sg, 1);
-        d.rest = 0.35 + Math.random() * 0.3;   // 벌어진 채 잠깐 머물다 떠난다
-        d.hov = c.hov; d.ax = c.ax; d.jig = 1; d.born = clock;   // 갓 갈라진 별은 반짝 빛난다
-        stars.push(d);
-      }
-    }
-    stars.splice(0, n);
-  };
-  // 다 찬 뒤 별을 누르면 모든 별이 누른 별 쪽으로 빨려 들어가 하나로 합쳐진다.
-  // 멀리 있는 별일수록 조금 늦게 출발해 거의 함께 닿고, 닿을수록 작아지며 가운데 별이 부풀어 오른다.
-  const startMerge = (core) => {
-    if (colony.merge >= 0 || colony.split >= 0) return;
-    colony.merge = 0; colony.core = core;
-    let far = 1;
-    stars.forEach((c) => { far = Math.max(far, Math.hypot(c.x - core.x, c.y - core.y)); });
-    stars.forEach((c) => {
-      c.sx = c.x; c.sy = c.y; c.rest = 0; c.chase = false;
-      c.md = 0.25 * (1 - Math.hypot(c.x - core.x, c.y - core.y) / far) + Math.random() * 0.08;
-      c.sw = (Math.random() < 0.5 ? -1 : 1) * (0.15 + Math.random() * 0.15);   // 살짝 휘어 들어온다
-    });
-  };
-  const finishMerge = () => {
-    const core = colony.core;
-    colony.merge = -1; colony.core = null;
-    stars.length = 0;
-    core.sc = 1; core.al = 1; core.pulse = 0.7; core.rest = 1; core.vx = core.vy = 0;
-    stars.push(core);
-    burst(core.x, core.y, 16);
-    pushRipple(shockwave(core.x, core.y, 0.5));
-  };
-  const stepStars = (dt, s) => {
-    for (let k = sparks.length - 1; k >= 0; k--) {
-      const p = sparks[k];
-      p.age += dt;
-      if (p.age > p.life) { sparks.splice(k, 1); continue; }
-      const drag = Math.exp(-dt * 3.2);
-      p.vx *= drag; p.vy = p.vy * drag + 260 * dt;
-      p.x += p.vx * dt; p.y += p.vy * dt;
-    }
-    if (colony.busy) return;
-    if (!stars.length) { colony.wait -= dt; if (colony.wait <= 0) spawnStar(); return; }
-    if (colony.split >= 0) { colony.split += dt; if (colony.split >= DIV) finishSplit(); }
-    if (colony.merge >= 0) {
-      colony.merge += dt;
-      const m = colony.merge, core = colony.core;
-      let got = 0;
-      for (let i = 0; i < stars.length; i++) {
-        const c = stars[i];
-        if (c === core) continue;
-        const u = Math.max(0, Math.min(1, (m - c.md) / (MERGE - 0.35))), e = u * u * u;   // 점점 빨라지며 빨려 든다
-        const dx = core.x - c.sx, dy = core.y - c.sy;
-        const bend = Math.sin(Math.PI * u) * c.sw;
-        c.x = c.sx + dx * e - dy * bend; c.y = c.sy + dy * e + dx * bend;
-        c.px = c.x; c.py = c.y;
-        c.sc = 1 - 0.55 * e; c.al = u > 0.85 ? (1 - u) / 0.15 : 1;
-        if (u >= 1) got++;
-      }
-      core.vx *= Math.exp(-dt * 8); core.vy *= Math.exp(-dt * 8);
-      core.pulse = 0.7 * got / Math.max(1, stars.length - 1);
-      core.px = core.x; core.py = core.y;
-      if (m >= MERGE) finishMerge();
-      return;
-    }
-    const splitting = colony.split >= 0;
-    let anyNear = false;
-    for (let i = 0; i < stars.length; i++) {
-      const c = stars[i];
-      c.fade = Math.min(1, c.fade + dt * 2.5);
-      if (c.pulse > 0) c.pulse = Math.max(0, c.pulse - dt * 1.4);   // 합쳐진 별이 부풀었다 제 크기로
-      if (c.jig > 0) c.jig *= Math.exp(-dt * 3.2);
-      // 커서가 (패널이 아닌 빈 곳에서) 가까이 오면 반응한다: 커지며 파르르 떨고, 느려져 누르기 쉽다
-      const near = mouse.on && mouse.bg && Math.hypot(mouse.x - c.px, mouse.y - c.py) < starR() + 30;
-      if (near) anyNear = true;
-      c.hov += ((near ? 1 : 0) - c.hov) * Math.min(1, dt * 10);
-      if (splitting) {
-        // 나뉘는 동안은 거의 멈춰 있다
-        const dr = Math.exp(-dt * 8);
-        c.vx *= dr; c.vy *= dr;
-      } else {
-        const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy);
-        if (c.rest > 0) { c.rest -= dt; if (c.rest <= 0) pickTarget(c); }
-        else if (d < 14) {
-          // 누른 자리까지 쫓아왔으면 거기서 잠깐 머문다. 그 밖에는 빈 곳에 닿으면 반쯤은 잠깐 머물고, 아니면 바로 다음 곳으로
-          if (c.chase) { c.chase = false; c.rest = 1.2; }
-          else if (c.free && Math.random() < 0.5) c.rest = 0.7 + Math.random() * 0.9; else pickTarget(c);
-        }
-        const sp = c.rest > 0 ? 0 : 110 * (c.chase ? 2.6 : 1) * Math.min(1, 0.35 + d / 120) * (1 - 0.75 * c.hov);
-        const k = Math.min(1, dt * (c.chase ? 5 : 2.4));
-        c.vx += ((d ? dx / d : 0) * sp - c.vx) * k;
-        c.vy += ((d ? dy / d : 0) * sp - c.vy) * k;
-      }
-      c.x += c.vx * dt; c.y += c.vy * dt;
-    }
-    // 별끼리 겹치지 않게 살짝 밀어낸다(나뉘는 동안은 빛이 늘어나므로 조금 더 넓게)
-    const gapR = starR() * (splitting ? 4.4 : 2.5);
-    for (let i = 0; i < stars.length; i++) {
-      const a = stars[i];
-      for (let j = i + 1; j < stars.length; j++) {
-        const b = stars[j], dx = b.x - a.x, dy = b.y - a.y;
-        if (dx > gapR || dx < -gapR || dy > gapR || dy < -gapR) continue;
-        const d = Math.hypot(dx, dy) || 0.01;
-        if (d >= gapR) continue;
-        const m = (gapR - d) * Math.min(1, dt * 6) / 2, ux = dx / d, uy = dy / d;
-        a.x -= ux * m; a.y -= uy * m; b.x += ux * m; b.y += uy * m;
-      }
-    }
-    for (let i = 0; i < stars.length; i++) {
-      const c = stars[i];
-      c.px = c.x + Math.sin(s * 2.7 + c.seed) * 3;
-      c.py = c.y + Math.cos(s * 3.3 + c.seed) * 3;
-    }
-    if (anyNear !== colony.over) { colony.over = anyNear; document.documentElement.style.cursor = anyNear ? 'pointer' : ''; }
-  };
-  // 별빛 하나(가운데 (x, y), 크기 R, 밝기 a): 밤하늘 별처럼 작고 또렷한 빛 알갱이에 은은한 빛무리,
-  // 가늘고 끝으로 갈수록 흐려지는 십자 빛살 하나만. 별빛처럼 밝기와 빛살 길이가 조금씩 깜빡인다.
-  // 연회색 바탕에서도 보이도록 빛은 따뜻한 금빛(#FFB300 계열)이다.
-  const starGlow = (x, y, R, a, s, seed) => {
-    if (a <= 0.01 || R <= 0.2) return;
-    const tw = 0.72 + 0.28 * (0.5 + 0.5 * Math.sin(s * 4.1 + seed)) * (0.6 + 0.4 * Math.sin(s * 1.7 + seed * 3));   // 깜빡임 0.72~1
-    // 넓고 옅은 빛무리
-    ctx.globalAlpha = a * tw;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, R * 3.4);
-    g.addColorStop(0, 'rgba(255,196,60,0.42)'); g.addColorStop(0.22, 'rgba(255,186,40,0.16)'); g.addColorStop(1, 'rgba(255,179,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(x, y, R * 3.4, 0, 6.2832); ctx.fill();
-    // 십자 빛살: 1px 남짓한 가는 빛줄기가 가운데에서 끝으로 흐려진다
-    const L = R * (2.6 + 1.4 * tw);
-    ctx.lineCap = 'round';
-    for (let k = 0; k < 2; k++) {
-      const ux = k ? 0 : 1, uy = k ? 1 : 0;
-      const lg = ctx.createLinearGradient(x - ux * L, y - uy * L, x + ux * L, y + uy * L);
-      lg.addColorStop(0, 'rgba(255,186,40,0)'); lg.addColorStop(0.5, 'rgba(255,200,80,0.85)'); lg.addColorStop(1, 'rgba(255,186,40,0)');
-      ctx.strokeStyle = lg; ctx.lineWidth = Math.max(0.8, R * 0.13);
-      ctx.beginPath(); ctx.moveTo(x - ux * L, y - uy * L); ctx.lineTo(x + ux * L, y + uy * L); ctx.stroke();
-    }
-    // 빛 알갱이: 하얀 가운데에서 금빛으로 부드럽게 번진다(테두리 없음)
-    ctx.globalAlpha = a;
-    const cg = ctx.createRadialGradient(x, y, 0, x, y, R * 0.9);
-    cg.addColorStop(0, 'rgba(255,255,255,1)'); cg.addColorStop(0.35, 'rgba(255,246,214,1)');
-    cg.addColorStop(0.65, 'rgba(255,200,70,0.75)'); cg.addColorStop(1, 'rgba(255,179,0,0)');
-    ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(x, y, R * 0.9, 0, 6.2832); ctx.fill();
-  };
-  // 별 하나. 나뉘는 중(p 0~1)이면 한 번 밝게 부풀었다가 빛이 실처럼 늘어나며 둘로 갈라지고,
-  // 갓 갈라진 별은 반짝 빛나며 자리를 잡는다. 합쳐지는 중이면 짧은 빛꼬리를 끌며 가운데 별로 빨려 든다.
-  const drawStar = (c, s, p) => {
-    const R = starR() * (1 + 0.3 * c.hov) * c.sc * (1 + c.pulse) * (1 + 0.35 * c.jig);
-    const a = c.fade * c.al;
-    const shake = Math.sin(s * 38 + c.seed) * 0.6 * c.hov;
-    const x = c.px + shake, y = c.py;
-    if (p >= 0) {
-      const e = p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p);
-      const off = starR() * 1.4 * e, ux = Math.cos(c.ax), uy = Math.sin(c.ax);
-      const swell = 1 + 0.35 * Math.sin(Math.PI * Math.min(1, p / 0.45));   // 갈라지기 전에 힘을 모으듯 부푼다
-      // 두 별 사이를 잇는 빛줄기. 갈라질수록 가늘어지다 끊긴다
-      const link = Math.max(0, 1 - p / 0.8);
-      if (off > 0.5 && link > 0) {
-        ctx.globalAlpha = a * link;
-        ctx.strokeStyle = 'rgba(255,196,60,0.8)'; ctx.lineCap = 'round'; ctx.lineWidth = 1.4 * link + 0.4;
-        ctx.beginPath(); ctx.moveTo(x - ux * off, y - uy * off); ctx.lineTo(x + ux * off, y + uy * off); ctx.stroke();
-      }
-      const r2 = R * swell * (1 - 0.25 * Math.sin(Math.PI * p));
-      starGlow(x - ux * off, y - uy * off, r2, a, s, c.seed);
-      starGlow(x + ux * off, y + uy * off, r2, a, s, c.seed + 1.7);
-    } else {
-      // 합쳐지는 중: 지나온 쪽으로 짧은 빛꼬리
-      if (colony.merge >= 0 && c !== colony.core && c.sx !== undefined) {
-        const dx = c.sx - c.x, dy = c.sy - c.y, d = Math.hypot(dx, dy);
-        if (d > 2) {
-          const L = Math.min(d, 46) / d;
-          const gr = ctx.createLinearGradient(x, y, x + dx * L, y + dy * L);
-          gr.addColorStop(0, 'rgba(255,196,60,0.7)'); gr.addColorStop(1, 'rgba(255,179,0,0)');
-          ctx.globalAlpha = a;
-          ctx.strokeStyle = gr; ctx.lineCap = 'round'; ctx.lineWidth = 1.3;
-          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx * L, y + dy * L); ctx.stroke();
-        }
-      }
-      starGlow(x, y, R, a, s, c.seed);
-    }
-    // 커서가 가까이 오면 노란 테가 둘레로 번져 나간다
-    if (c.hov > 0.02) {
-      for (let q = 0; q < 2; q++) {
-        const f = (s * 1.4 + q * 0.5) % 1;
-        ctx.globalAlpha = c.hov * (1 - f) * 0.9 * a;
-        ctx.strokeStyle = '#FFB300'; ctx.lineWidth = 2.2 * (1 - f) + 0.6;
-        ctx.beginPath(); ctx.arc(c.px, c.py, R * 2 + 8 + f * 20, 0, 6.2832); ctx.stroke();
-      }
-    }
-  };
-  const drawStars = (s) => {
-    for (let k = 0; k < sparks.length; k++) {
-      const p = sparks[k], f = 1 - p.age / p.life;
-      ctx.globalAlpha = f;
-      ctx.strokeStyle = p.col; ctx.lineWidth = 1.2 + f * 1.6; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); ctx.stroke();
-    }
-    const p = colony.split >= 0 ? Math.min(1, colony.split / DIV) : -1;
-    for (let k = 0; k < stars.length; k++) drawStar(stars[k], s, p);
-    ctx.globalAlpha = 1;
-  };
+  let busy = false;   // 제호 변신 장면이 도는 중
 
   const draw = (now) => {
     const s = now / 1000;
-    const dt = last ? Math.min(0.05, Math.max(0, (now - last) / 1000)) : 0;
-    last = now;
     ctx.clearRect(0, 0, w, h);
     // 새 물결은 그리는 시계로 시작 시각을 잡는다(누른 순간의 시계와 그리는 시계가 다를 수 있다)
     for (let k = 0; k < ripples.length; k++) if (ripples[k].start < 0) ripples[k].start = now;
     for (let k = ripples.length - 1; k >= 0; k--) if ((now - ripples[k].start) / 1000 > ripples[k].life) ripples.splice(k, 1);
-    clock = s;
-    if (!reduce) stepStars(dt, s);
-    const nc = stars.length;
 
     for (let j = 0; j < rows; j++) {
       const by = j * gap;
@@ -1147,17 +916,6 @@ function startDotWave(canvas) {
             const d = Math.sqrt(d2) || 1, f = 1 - d / R;
             x += dx / d * f * f * 26; y += dy / d * f * f * 26;
             hot = f;
-          }
-        }
-        // 별 둘레의 점도 살짝 밀려나며 노랗게 물든다(가까이 오면 물결이 먼저 알려 준다)
-        for (let k = 0; k < nc; k++) {
-          const c = stars[k], dx = x - c.px, dy = y - c.py;
-          if (dx > 70 || dx < -70 || dy > 70 || dy < -70) continue;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < 4900) {
-            const d = Math.sqrt(d2) || 1, f = (1 - d / 70) * c.fade;
-            x += dx / d * f * f * 14; y += dy / d * f * f * 14;
-            gold = Math.max(gold, f * 0.9);
           }
         }
         for (let k = 0; k < ripples.length; k++) {
@@ -1183,11 +941,10 @@ function startDotWave(canvas) {
       }
     }
     ctx.globalAlpha = 1;
-    if (!reduce) drawStars(s);
   };
 
   const loop = (now) => { draw(now); raf = requestAnimationFrame(loop); };
-  const start = () => { if (!raf && !reduce && !document.hidden) { last = 0; raf = requestAnimationFrame(loop); } };
+  const start = () => { if (!raf && !reduce && !document.hidden) { raf = requestAnimationFrame(loop); } };
   const stop = () => { if (raf) cancelAnimationFrame(raf); raf = 0; };
 
   const resize = () => {
@@ -1197,14 +954,11 @@ function startDotWave(canvas) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     gap = w < 700 ? 22 : 26;
     cols = Math.ceil(w / gap) + 2; rows = Math.ceil(h / gap) + 2;
-    spotsAt = -9;
-    stars.forEach(pickTarget);
     if (reduce) draw(0);
   };
   const onMove = (e) => {
     if (reduce || (e.pointerType && e.pointerType !== 'mouse')) return;
     mouse.x = e.clientX; mouse.y = e.clientY; mouse.on = true;
-    mouse.bg = !(e.target.closest && e.target.closest('a, button, .ieg-panel, .ieg-nav, .ieg-rail, .ieg-modal, .ieg-egg'));
   };
   const onLeave = () => { mouse.on = false; };
   // 패널·메뉴·버튼·링크가 아닌 빈 곳을 누르면 물결이 퍼진다
@@ -1218,23 +972,6 @@ function startDotWave(canvas) {
   const onDown = (e) => {
     if (reduce || (e.target.closest && e.target.closest('a, button, .ieg-panel, .ieg-nav, .ieg-rail, .ieg-modal, .ieg-egg'))) return;
     pushRipple(smallRipple(e.clientX, e.clientY));
-    if (colony.busy || !stars.length) return;
-    if (colony.merge >= 0) return;
-    // 별을 눌렀으면 모든 별이 둘로 나뉜다(손가락은 조금 넉넉하게). 다 찼으면 모두 그 별로 합쳐진다.
-    const reach = starR() + (e.pointerType === 'mouse' ? 12 : 26);
-    const hit = stars.find(c => Math.hypot(e.clientX - c.px, e.clientY - c.py) < reach);
-    if (hit) {
-      if (colony.split >= 0) return;
-      if (stars.length * 2 > STAR_MAX) { startMerge(hit); return; }
-      burst(e.clientX, e.clientY, 10);
-      divide();
-      return;
-    }
-    // 빈 바탕을 누르면 별들이 그 자리로 몰려온다(가려진 자리를 지나가도 괜찮다)
-    if (colony.split < 0) stars.forEach((c) => {
-      c.tx = e.clientX + (Math.random() - 0.5) * 40; c.ty = e.clientY + (Math.random() - 0.5) * 40;
-      c.free = true; c.rest = 0; c.chase = true;
-    });
   };
   const onVis = () => (document.hidden ? stop() : start());
 
@@ -1249,15 +986,12 @@ function startDotWave(canvas) {
   start();
   return {
     // 제호 변신 장면. 처음 들어올 때(intro: 패널이 처음부터 숨은 빈 무대)와 제호를 누를 때 보여 준다.
-    // 떠다니던 별은 모두 사라지고, 장면이 끝나고 3.5초 뒤 하나부터 다시 시작한다.
     play(intro) {
-      if (reduce || colony.busy || typeof playIegFinale !== 'function' || document.querySelector('.ieg-egg')) return;
-      stars.length = 0; colony.split = -1; colony.merge = -1; colony.core = null;
-      if (colony.over) { colony.over = false; document.documentElement.style.cursor = ''; }
-      colony.busy = true;
+      if (reduce || busy || typeof playIegFinale !== 'function' || document.querySelector('.ieg-egg')) return;
+      busy = true;
       playIegFinale({ intro: !!intro,
         ripple: (rx, ry, p) => pushRipple(shockwave(rx, ry, p)),
-        done: () => { colony.busy = false; colony.wait = 3.5; } });
+        done: () => { busy = false; } });
     },
     stop() {
       stop();
@@ -1817,6 +1551,7 @@ class Component extends DCLogic {
   state = {
     ...parseHash(),     // view: 'home' | 'newsletter' | 'press', page: 언론 보도 쪽 번호
     modalIndex: null, showTop: false,
+    nlPage: 0, nlOut: -1, nlIn: -1,   // 홈 소식지: 앞에 보이는 면, 막 뒤로 넘어간 면, 막 앞으로 나온 면(이전 면으로 넘길 때)
     railCur: null, railPos: 0, railActive: false,
     brokenImg: {}   // 불러오지 못한 썸네일 주소. 그 기사는 썸네일 칸 없이 글만 보인다.
   };
@@ -1882,6 +1617,23 @@ class Component extends DCLogic {
     };
     window.addEventListener('error', this._onImg, true);
     window.addEventListener('load', this._onImg, true);
+    // 홈 소식지 지면을 좌우로 밀면 넘긴다(왼쪽으로 밀면 다음 면). 민 직후의 누름(확대 보기)은 무시한다.
+    this._onSwipeDown = (e) => {
+      const st = e.target.closest && e.target.closest('.ieg-stack');
+      this._swipe = st ? { x: e.clientX, y: e.clientY } : null;
+    };
+    this._onSwipeUp = (e) => {
+      const sw = this._swipe;
+      this._swipe = null;
+      if (!sw) return;
+      const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        this._swipedAt = Date.now();
+        this.flipNl(dx < 0 ? 1 : -1);
+      }
+    };
+    window.addEventListener('pointerdown', this._onSwipeDown, { passive: true });
+    window.addEventListener('pointerup', this._onSwipeUp, { passive: true });
     this.scanThumbs();
     window.addEventListener('keydown', this._onKey);
     window.addEventListener('scroll', this._onScroll, { passive: true });
@@ -1942,6 +1694,8 @@ class Component extends DCLogic {
     this._unpinOn.forEach(t => window.removeEventListener(t, this._unpin));
     window.removeEventListener('error', this._onImg, true);
     window.removeEventListener('load', this._onImg, true);
+    window.removeEventListener('pointerdown', this._onSwipeDown);
+    window.removeEventListener('pointerup', this._onSwipeUp);
     if (this._sraf) cancelAnimationFrame(this._sraf);
     if (this._ro) this._ro.disconnect();
     if (this._fx) this._fx.stop();
@@ -2030,6 +1784,16 @@ class Component extends DCLogic {
     this.setState(s => ({ modalIndex: (s.modalIndex + dir + FLAT.length) % FLAT.length }));
   }
 
+  // 홈 소식지 넘기기(최신 호 안에서 돌아간다). 다음 면: 앞장이 뒤로 들어간다. 이전 면: 맨 뒤의 면이 앞으로 나온다.
+  flipNl(dir) {
+    const n = ISSUES.length ? ISSUES[0].pages.length : 0;
+    if (n < 2) return;
+    this.setState(s => {
+      const cur = s.nlPage, next = (cur + dir + n) % n;
+      return dir > 0 ? { nlPage: next, nlOut: cur, nlIn: -1 } : { nlPage: next, nlOut: -1, nlIn: next };
+    });
+  }
+
   renderVals() {
     const s = this.state;
 
@@ -2095,8 +1859,33 @@ class Component extends DCLogic {
       isPressPage: s.view === 'press',
       linkNlClass: s.view === 'newsletter' ? 'ieg-link is-on' : 'ieg-link',
       linkPressClass: s.view === 'press' ? 'ieg-link is-on' : 'ieg-link',
-      // 홈은 왼쪽 칸에 최신 호를 한 장씩 위아래로 크게
-      latestIssue: ISSUES.slice(0, 1).map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
+      // 홈은 왼쪽 칸에 최신 호를 한 면씩 크게. 두 장 이상이면 뒷장이 비어져 나오고 넘길 수 있다.
+      latestIssue: ISSUES.slice(0, 1).map((g, gi) => {
+        const n = g.pages.length, cur = Math.min(s.nlPage, n - 1);
+        const base = issue(g, gi);
+        return {
+          ...base,
+          stackClass: 'ieg-stack is-n' + Math.min(n, 3),
+          stack: base.previews.map((p, pi) => {
+            const pos = (pi - cur + n) % n;
+            const where = pos === 0 ? 'is-front' : pos === 1 ? 'is-back' : pos === 2 ? 'is-back2' : 'is-far';
+            return {
+              ...p,
+              cls: 'ieg-sheet ' + where + (pi === s.nlOut ? ' is-out' : '') + (pi === s.nlIn ? ' is-in' : ''),
+              tab: pos === 0 ? 0 : -1,
+              // 앞장은 확대 보기, 비어져 나온 뒷장은 그 장으로 넘긴다. 밀어서 넘긴 직후의 누름은 무시한다.
+              open: () => {
+                if (Date.now() - (this._swipedAt || 0) < 450) return;
+                if (pos === 0) p.open(); else if (pos === 1) this.flipNl(1);
+              }
+            };
+          }),
+          flipPrevClass: 'ieg-circle ieg-flip is-prev' + (n < 2 ? ' is-hidden' : ''),
+          flipNextClass: 'ieg-circle ieg-flip is-next' + (n < 2 ? ' is-hidden' : '')
+        };
+      }),
+      nlPrev: () => this.flipNl(-1),
+      nlNext: () => this.flipNl(1),
       // 소식지 페이지는 장수와 상관없이 한 줄로 쭉(한 장씩 위아래로) 내려가며 본다
       allIssues: ISSUES.map((g, gi) => ({ ...issue(g, gi), pagesClass: 'ieg-pages is-n1' })),
       // 가장 최신 기사 하나는 크게, 나머지 6건은 같은 모양의 카드로(화면 높이에 따라 3건 또는 6건이 보인다)

@@ -462,13 +462,13 @@
     .ieg-tick.is-cur .lab { opacity: 1; }
     .ieg-rail:hover .ieg-tick .lab { opacity: 1; pointer-events: auto; }
   }
+  /* 휴대폰: 게이지는 패널 바깥 오른쪽 여백(22px)에 가는 진행 막대만 둔다. 눈금 점·연월 글자는 띄우지 않는다
+     (패널 테두리·기사 글자와 겹치므로. 기사마다 날짜가 있다). 터치는 통과시킨다. */
   @media (max-width: 899px) {
-    .ieg-rail { right: 2px; pointer-events: none; }
-    .ieg-tick { pointer-events: none; }
-    .ieg-tick .d, .ieg-tick.is-year .d { width: 3px; height: 3px; margin-top: -1.5px; right: 13.5px; }
-    .ieg-rail-thumb { width: 8px; height: 8px; margin-top: -4px; right: 11px; box-shadow: none; }
-    .ieg-tick.is-cur .lab { opacity: 0; transition: opacity .35s var(--ease); }
-    .ieg-rail.is-active .ieg-tick.is-cur .lab { opacity: 1; }
+    .ieg-rail { right: -8px; pointer-events: none; }
+    .ieg-tick { display: none; }
+    .ieg-rail-track { width: 2px; background: rgba(0,0,0,0.08); }
+    .ieg-rail-thumb { width: 6px; height: 6px; margin-top: -3px; right: 12px; box-shadow: none; }
   }
 
   /* ── 사진 위 원형 버튼 (맨 위로, 확대 보기 조작) ── */

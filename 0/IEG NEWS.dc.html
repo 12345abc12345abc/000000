@@ -738,7 +738,7 @@ const ARTICLES = [
 // 한 호 안에서는 면 순서대로 두고, 한 번에 한 면씩 보여주며 화살표로 넘긴다.
 const ISSUES = [
   { issue: '2026. 09', pages: [
-    { src: 'uploads/3.png' }
+    { src: 'uploads/4.png' }
   ] },
   { issue: '2026. 08', pages: [
     { src: 'uploads/1.png' },
@@ -1395,11 +1395,11 @@ function playIegFinale(opt) {
         sparks.push({ x: h[0], y: h[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, age: 0, life: 0.25 + Math.random() * 0.3,
                       col: k % 2 ? '#FFB300' : '#FF0000' });
       }
-      clanks.push({ t, a: 1.2 });
+      clanks.push({ t, a: 0.4 });   // 흔들림은 은은하게(사용자 요청으로 줄였다)
     }
-    for (let li = 0; li < NLET; li++) if (cnt[li] && t >= lockAt[li] && once('l' + li)) { clanks.push({ t, a: 3.5 }); letterSparks(li, t); }
+    for (let li = 0; li < NLET; li++) if (cnt[li] && t >= lockAt[li] && once('l' + li)) { clanks.push({ t, a: 1.2 }); letterSparks(li, t); }
     if (t >= T.lock && once('lock')) {
-      clanks.push({ t, a: 11 });
+      clanks.push({ t, a: 3.5 });
       rings.push({ t, x: cx, y: cy, r0: 30, r1: Math.max(W, H) * 0.62, dur: 0.75, col: '#FF0000', w: 7 });
       ripple(cx, cy, 1);
       if (mark) mark.style.visibility = 'hidden';   // 머리 막대의 제호는 큰 로고가 날아와 앉을 때 다시 보인다
